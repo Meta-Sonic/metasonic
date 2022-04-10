@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.0)
+cmake_minimum_required(VERSION 3.22.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -17,18 +17,12 @@ endif()
 
 project(metasonic VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-if (APPLE)
-    set(CMAKE_C_FLAGS "-x objective-c")
-    set(CMAKE_CXX_FLAGS "-x objective-c++")
-endif()
 
 # User options.
 option(MTS_BUILD_TESTS "Build and run tests." ON) 
-option(MTS_BUILD_BENCH "Build and run benchmarks." ON)
-option(MTS_BUILD_DEV "Build dev." ON)
+option(MTS_BUILD_BENCH "Build and run benchmarks." OFF)
 
 include(mts_fetch_library)
 include(mts_compile_options)
