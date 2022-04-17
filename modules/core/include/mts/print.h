@@ -40,6 +40,9 @@
 #include <ctime>
 #include <string_view>
 
+MTS_PUSH_MACROS
+#include "mts/detail/undef_macros.h"
+
 MTS_BEGIN_NAMESPACE
 template <typename T>
 inline void print_element(std::ostream& stream, const T& t);
@@ -138,6 +141,10 @@ struct equal_string {
   static constexpr const char* value = " = ";
 };
 
+struct colon_string {
+  static constexpr const char* value = " : ";
+};
+
 template <typename D = comma_space_string, typename T, typename... Ts>
 inline void basic_print(std::ostream& stream, const T& t, const Ts&... ts) {
   if constexpr (sizeof...(ts) > 0) {
@@ -215,3 +222,4 @@ inline void initialize_print() {
 }
 
 MTS_END_NAMESPACE
+MTS_POP_MACROS

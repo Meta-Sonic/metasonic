@@ -41,6 +41,9 @@
 #include <limits>
 #include <type_traits>
 
+MTS_PUSH_MACROS
+#include "mts/detail/undef_macros.h"
+
 #ifdef abs
   #undef abs
 #endif
@@ -198,3 +201,4 @@ inline constexpr T radian_to_degree(T value) {
   return value * one_over_two_pi<T> * (T)360.0;
 }
 MTS_END_SUB_NAMESPACE(math)
+MTS_POP_MACROS

@@ -493,6 +493,74 @@ public:
     mts_assert(input.size() <= size(), "copy() size out of bounds");
     vec::copy(input.data(), 1, data(), 1, mts::minimum(size(), input.size()));
   }
+
+  //
+  // Convert.
+  //
+  inline wire& assign_from_int16(const std::int16_t* input, std::size_t input_stride = 1) {
+    vec::convert_from_int16<value_type>(input, input_stride, data(), size());
+    return *this;
+  }
+
+  inline wire& assign_from_int24(const mts::int24_t* input, std::size_t input_stride = 1) {
+    vec::convert_from_int24<value_type>(input, input_stride, data(), size());
+    return *this;
+  }
+
+  inline wire& assign_from_int32(const std::int32_t* input, std::size_t input_stride = 1) {
+    vec::convert_from_int32<value_type>(input, input_stride, data(), size());
+    return *this;
+  }
+
+  inline wire& assign_from_float(const float* input, std::size_t input_stride = 1) {
+    vec::convert_from_float<value_type>(input, input_stride, data(), size());
+    return *this;
+  }
+
+  inline wire& assign_from_double(const double* input, std::size_t input_stride = 1) {
+    vec::convert_from_double<value_type>(input, input_stride, data(), size());
+    return *this;
+  }
+
+private:
+  template <typename _T, typename... Args>
+  struct is_assignable_from_any_of {
+    static constexpr bool value = (std::is_same_v<_T, Args> || ...);
+  };
+
+  template <typename _T>
+  using is_assignable_from = is_assignable_from_any_of<_T, std::int16_t, mts::int24_t, std::int32_t, float, double>;
+
+public:
+  template <typename _T, typename = typename std::enable_if_t<is_assignable_from<_T>::value, _T>>
+  inline wire& assign_from(const _T* input, std::size_t input_stride = 1) {
+    if constexpr (std::is_same_v<_T, std::int16_t>) {
+      return assign_from_int16(input, input_stride);
+    }
+    else if constexpr (std::is_same_v<_T, mts::int24_t>) {
+      return assign_from_int24(input, input_stride);
+    }
+    else if constexpr (std::is_same_v<_T, std::int32_t>) {
+      return assign_from_int32(input, input_stride);
+    }
+    else if constexpr (std::is_same_v<_T, float>) {
+      return assign_from_float(input, input_stride);
+    }
+    else if constexpr (std::is_same_v<_T, double>) {
+      return assign_from_double(input, input_stride);
+    }
+
+    return *this;
+  }
+  // wire[i] *= value
+  inline wire& operator*=(value_type value) noexcept {
+    vec::mul(data(), 1, value, data(), 1, size());
+    //      vec::mul_value_with_vector(data(), data(), value, size());
+    //        for (std::size_t i = 0; i < size(); i++) {
+    //          data()[i] *= value;
+    //        }
+    return *this;
+  }
 };
 
 MTS_END_NAMESPACE

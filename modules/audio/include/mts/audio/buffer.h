@@ -37,6 +37,7 @@
 #include "mts/traits.h"
 #include "mts/audio/detail/buffer_allocator.h"
 #include "mts/audio/vector_operations.h"
+#include "mts/audio/wire.h"
 
 MTS_BEGIN_NAMESPACE
 template <typename T>
@@ -118,6 +119,16 @@ public:
   inline channel_const_pointer operator[](size_type index) const noexcept {
     mts_assert(index < _channel_size, "Out of bounds index");
     return _buffers[index];
+  }
+
+  inline wire<value_type> channel_wire(size_type index) noexcept {
+    mts_assert(index < _channel_size, "Out of bounds index");
+    return wire<value_type>(_buffers[index], _buffer_size);
+  }
+
+  inline wire<const value_type> channel_wire(size_type index) const noexcept {
+    mts_assert(index < _channel_size, "Out of bounds index");
+    return wire<const value_type>(_buffers[index], _buffer_size);
   }
 
   inline void clear() {

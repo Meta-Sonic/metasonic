@@ -58,7 +58,7 @@ inline constexpr void set_flag(_FlagType flag_to_set, bool value, _FlagType& fla
   flags = (_FlagType)(flags & ~flag_to_set);
 }
 
-#define MTS_DECLARE_ENUM_CLASS_FLAGS(enum_class)                                                                      \
+#define MTS_DECLARE_ENUM_CLASS_FLAGS(enum_class)                                                                       \
   inline enum_class operator|(enum_class lhs, enum_class rhs) {                                                        \
     using type = std::underlying_type_t<enum_class>;                                                                   \
     return (enum_class)(static_cast<type>(lhs) | static_cast<type>(rhs));                                              \

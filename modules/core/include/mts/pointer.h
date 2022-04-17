@@ -50,22 +50,37 @@ using maybe_null = T;
 template <class T, class = std::enable_if_t<std::is_pointer_v<T>>>
 using owner = T;
 
-template <typename T, typename _Fct>
-inline auto optional_pointer_call(T* obj, _Fct fct) -> decltype(fct(obj)) {
-  using return_type = decltype(fct(obj));
-  if constexpr (std::is_same_v<return_type, void>) {
-    if (obj) {
-      fct(obj);
+template <typename T, typename Fct, typename... Args>
+inline auto optional_call(T&& obj, Fct&& fct, Args&&... args) {
+  if constexpr (std::is_member_function_pointer_v<Fct>) {
+    using return_type = decltype((obj->*fct)(std::forward<Args>(args)...));
+    if constexpr (std::is_same_v<return_type, void>) {
+      if (obj) {
+        (obj->*fct)(std::forward<Args>(args)...);
+      }
+    }
+    else {
+      return obj ? (obj->*fct)(std::forward<Args>(args)...) : return_type{};
     }
   }
   else {
-    return obj ? fct(obj) : return_type{};
+    using return_type = decltype(fct(obj, std::forward<Args>(args)...));
+    if constexpr (std::is_same_v<return_type, void>) {
+      if (obj) {
+        fct(obj, std::forward<Args>(args)...);
+      }
+    }
+    else {
+      return obj ? fct(obj, std::forward<Args>(args)...) : return_type{};
+    }
   }
 }
 
 template <class _Tp, class _Dp, typename... Args>
 inline typename std::unique_ptr<_Tp, _Dp>::element_type& get_ref(std::unique_ptr<_Tp, _Dp>& ptr, Args&&... args) {
-  return *(ptr ? ptr : (ptr = std::make_unique<typename std::unique_ptr<_Tp, _Dp>::element_type>(std::forward<Args>(args)...)));
+  return *(ptr
+          ? ptr
+          : (ptr = std::make_unique<typename std::unique_ptr<_Tp, _Dp>::element_type>(std::forward<Args>(args)...)));
 }
 
 ///
@@ -199,7 +214,19 @@ class managed {
   struct handle_type {};
 
 public:
-  using weak_handle_type = std::weak_ptr<handle_type>;
+  class weak_handle_type : private std::weak_ptr<handle_type> {
+  public:
+    weak_handle_type() = default;
+    using weak_ptr::expired;
+    using weak_ptr::reset;
+    using weak_ptr::swap;
+
+  private:
+    friend class managed;
+
+    inline weak_handle_type(std::shared_ptr<handle_type> p)
+        : std::weak_ptr<handle_type>(p) {}
+  };
 
   managed() = default;
   managed(const managed&) = delete;
@@ -275,33 +302,13 @@ public:
   inline managed_ptr(std::nullptr_t)
       : managed_ptr() {}
 
-  //    inline managed_ptr(not_null<pointer> obj, bool owned) {
-  //      if (owned) {
-  //        _raw = nullptr;
-  //        _shared = std::shared_ptr<value_type>(obj.get());
-  //      }
-  //      else {
-  //        _raw = obj;
-  //        _bailout = obj->get_watcher();
-  //      }
-  //    }
-  //
-  //    inline managed_ptr(std::unique_ptr<value_type>&& obj)
-  //        : _raw(nullptr)
-  //        , _shared(std::shared_ptr<value_type>(obj.release())) {}
-
   inline managed_ptr(not_null<pointer> obj, bool owned)
       : managed_ptr(owned ? managed_ptr(std::shared_ptr<value_type>(obj.get()), make_shared_tag{}) : managed_ptr(obj)) {
   }
 
   inline managed_ptr(std::shared_ptr<value_type> obj)
       : _raw(nullptr)
-      , _shared(obj) {
-
-    if (_shared) {
-      //      _shared->_is_shared = true;
-    }
-  }
+      , _shared(obj) {}
 
   inline managed_ptr(std::unique_ptr<value_type>&& obj)
       : managed_ptr(std::shared_ptr<value_type>(obj.release()), make_shared_tag{}) {}
@@ -462,10 +469,7 @@ private:
 
   inline managed_ptr(std::shared_ptr<value_type>&& obj, make_shared_tag)
       : _raw(nullptr)
-      , _shared(obj) {
-
-    //    _shared->_is_shared = true;
-  }
+      , _shared(obj) {}
 
   template <class U, class>
   friend class managed_ptr;
@@ -486,9 +490,6 @@ managed_ptr(std::unique_ptr<T>&&) -> managed_ptr<T>;
 
 template <class T>
 managed_ptr(std::shared_ptr<T>) -> managed_ptr<T>;
-
-//
-//
 
 template <class _T1, class _T2>
 inline bool operator==(const managed_ptr<_T1>& __x, const managed_ptr<_T2>& __y) {
@@ -690,24 +691,14 @@ public:
     sp._obj = nullptr;
   }
 
-  //  template <typename U>
-  //  inline weak_managed_ptr(weak_managed_ptr<U>&& sp)
-  //      : _weak_ptr(std::move(sp._weak_ptr))
-  //      , _watcher(std::move(sp._watcher))
-  //      , _obj(sp._obj) {
-  //    sp._obj = nullptr;
-  //  }
-
   template <typename U>
   inline weak_managed_ptr(weak_managed_ptr<U>&& sp)
-      //      : _weak_ptr(sp._weak_ptr)
       : _weak_ptr(std::static_pointer_cast<value_type>(std::move(sp._weak_ptr).lock()))
       , _watcher(sp._watcher)
       , _obj(static_cast<value_type*>(sp._obj)) {}
 
   template <typename U>
   inline weak_managed_ptr(const weak_managed_ptr<U>& sp)
-      //      : _weak_ptr(sp._weak_ptr)
       : _weak_ptr(std::static_pointer_cast<value_type>(sp._weak_ptr.lock()))
       , _watcher(sp._watcher)
       , _obj(static_cast<value_type*>(sp._obj)) {}
@@ -764,7 +755,6 @@ public:
     }
 
     if (m.is_shared()) {
-      //      _weak_ptr = m.get_shared();
       _weak_ptr = std::static_pointer_cast<value_type>(m.get_shared());
       return *this;
     }

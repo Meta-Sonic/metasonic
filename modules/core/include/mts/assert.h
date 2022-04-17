@@ -42,30 +42,14 @@
   #define mts_assert(Expr, Msg) ;
   #define mts_noexcept_assert(Expr, Msg) ;
   #define mts_error(Msg) ;
-
   #define mts_cexpr_assert(CHECK) void(0)
 
 #else
   #define mts_assert(Expr, Msg) _VMTS::assert_detail::custom_assert(#Expr, Expr, __FILE__, __LINE__, Msg)
   #define mts_noexcept_assert(Expr, Msg) _VMTS::assert_detail::custom_assert(#Expr, Expr, __FILE__, __LINE__, Msg)
   #define mts_error(Msg) _VMTS::assert_detail::custom_error(__FILE__, __LINE__, Msg)
-
   #define mts_cexpr_assert(CHECK) (MTS_LIKELY(CHECK) ? void(0) : [] { assert(!#CHECK); }())
 #endif // __MTS_RELEASE_BUILD__.
-
-//#ifndef _GLIBCXX_THROW_OR_ABORT
-//# if __cpp_exceptions
-//#  define _GLIBCXX_THROW_OR_ABORT(_EXC) (throw (_EXC))
-//# else
-//#  define _GLIBCXX_THROW_OR_ABORT(_EXC) (__builtin_abort())
-//# endif
-//#endif
-
-#if __MTS_HAS_EXCEPTIONS__
-  #define mts_throw(Excep) throw(Excep)
-#else
-  #define mts_throw(Excep) std::abort()
-#endif // __MTS_HAS_EXCEPTIONS__
 
 MTS_BEGIN_NAMESPACE
 namespace assert_detail {

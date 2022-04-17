@@ -86,9 +86,9 @@ public:
     return *this;
   }
 
-  inline __wrap_iterator operator+(difference_type v) const noexcept { return __i + v; }
+  inline __wrap_iterator operator+(difference_type v) const noexcept { return __wrap_iterator(__i + v); }
 
-  inline __wrap_iterator operator-(difference_type v) const noexcept { return __i - v; }
+  inline __wrap_iterator operator-(difference_type v) const noexcept { return __wrap_iterator(__i - v); }
 
   inline reference operator*() const noexcept { return *__i; }
 

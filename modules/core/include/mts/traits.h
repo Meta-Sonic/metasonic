@@ -33,16 +33,21 @@
 
 #pragma once
 #include "mts/config.h"
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <cstddef>
 #include <type_traits>
+#include <functional>
 #include <iterator>
 #include <complex>
 #include <memory>
 #include <string_view>
 #include <utility>
 #include <tuple>
+
+MTS_PUSH_MACROS
+#include "mts/detail/undef_macros.h"
 
 MTS_BEGIN_NAMESPACE
 
@@ -57,6 +62,16 @@ struct nonesuch {
   ~nonesuch() = delete;
   nonesuch(nonesuch const&) = delete;
   void operator=(nonesuch const&) = delete;
+};
+
+/// string_litteral.
+template <std::size_t N>
+struct string_litteral {
+  static constexpr size_t size() { return N; }
+
+  constexpr string_litteral(const char (&str)[N]) { std::copy_n(str, N, value); }
+
+  char value[N];
 };
 
 template <typename T>
@@ -185,7 +200,6 @@ using is_detected_convertible = std::is_convertible<detected_t<Op, Args...>, To>
 
 template <class To, template <class...> class Op, class... Args>
 inline constexpr bool is_detected_convertible_v = is_detected_convertible<To, Op, Args...>::value;
-
 
 template <typename T, typename Tuple>
 struct has_type;
@@ -632,62 +646,163 @@ using floating_point_common_return = floating_point_return<std::common_type_t<T.
 template <typename... T>
 using floating_point_common_return_t = typename floating_point_common_return<T...>::type;
 
-/// tuple_cat_t.
-template <typename... _InputT>
-using tuple_cat_t = decltype(std::tuple_cat(std::declval<_InputT>()...));
-
 /// to_integral.
 template <typename T>
 inline constexpr std::underlying_type_t<T> to_integral(T value) {
   return static_cast<std::underlying_type_t<T>>(value);
 }
 
-template <class _Rep, class _Period>
-inline typename std::enable_if<std::is_floating_point<_Rep>::value, std::chrono::nanoseconds>::type
-__safe_nanosecond_cast(std::chrono::duration<_Rep, _Period> __d) {
-  using namespace std::chrono;
-  using __ratio = std::ratio_divide<_Period, std::nano>;
-  using __ns_rep = nanoseconds::rep;
-  _Rep __result_float = __d.count() * __ratio::num / __ratio::den;
-
-  _Rep __result_max = std::numeric_limits<__ns_rep>::max();
-  if (__result_float >= __result_max) {
-    return nanoseconds::max();
-  }
-
-  _Rep __result_min = std::numeric_limits<__ns_rep>::min();
-  if (__result_float <= __result_min) {
-    return nanoseconds::min();
-  }
-
-  return nanoseconds(static_cast<__ns_rep>(__result_float));
+namespace detail {
+template <std::size_t __begin, std::size_t... __indices, typename Tuple>
+auto tuple_slice_impl(Tuple&& tuple, std::index_sequence<__indices...>) {
+  return std::make_tuple(std::get<__begin + __indices>(std::forward<Tuple>(tuple))...);
 }
 
-template <class _Rep, class _Period>
-inline typename std::enable_if<!std::is_floating_point<_Rep>::value, std::chrono::nanoseconds>::type
-__safe_nanosecond_cast(std::chrono::duration<_Rep, _Period> __d) {
-  using namespace std::chrono;
-  if (__d.count() == 0) {
-    return nanoseconds(0);
-  }
+} // namespace detail.
 
-  using __ratio = std::ratio_divide<_Period, std::nano>;
-  using __ns_rep = nanoseconds::rep;
-  __ns_rep __result_max = std::numeric_limits<__ns_rep>::max();
-  if (__d.count() > 0 && __d.count() > __result_max / __ratio::num) {
-    return nanoseconds::max();
-  }
-
-  __ns_rep __result_min = std::numeric_limits<__ns_rep>::min();
-  if (__d.count() < 0 && __d.count() < __result_min / __ratio::num) {
-    return nanoseconds::min();
-  }
-
-  __ns_rep __result = __d.count() * __ratio::num / __ratio::den;
-  if (__result == 0) {
-    return nanoseconds(1);
-  }
-
-  return nanoseconds(__result);
+/// tuple_slice.
+template <std::size_t __begin, std::size_t __count, typename Tuple>
+auto tuple_slice(Tuple&& tuple) {
+  static_assert(__count > 0, "splicing tuple to 0-length is weird...");
+  return detail::tuple_slice_impl<__begin>(std::forward<Tuple>(tuple), std::make_index_sequence<__count>());
 }
+
+template <std::size_t __begin, std::size_t __count, typename Tuple>
+using tuple_slice_t = decltype(tuple_slice<__begin, __count>(std::declval<Tuple>()));
+
+/// tuple_cat_t.
+template <typename... _InputT>
+using tuple_cat_t = decltype(std::tuple_cat(std::declval<_InputT>()...));
+
+/// tuple_index.
+template <class T, class Tuple>
+struct tuple_index;
+
+template <class T, class... Types>
+struct tuple_index<T, std::tuple<T, Types...>> {
+  static constexpr std::size_t value = 0;
+};
+
+template <class T, class U, class... Types>
+struct tuple_index<T, std::tuple<U, Types...>> {
+  static constexpr std::size_t value = 1 + tuple_index<T, std::tuple<Types...>>::value;
+};
+
+template <class... Types>
+inline constexpr size_t tuple_index_v = tuple_index<Types...>::value;
+
+//
+//
+//
+// Function traits.
+//
+//
+
+template <int>
+struct variadic_placeholder {};
 MTS_END_NAMESPACE
+
+namespace std {
+template <int N>
+struct is_placeholder<mts::variadic_placeholder<N>> : std::integral_constant<int, N + 1> {};
+} // namespace std.
+
+MTS_BEGIN_NAMESPACE
+// template <class T>
+// using call_operator_t = decltype(&T::operator());
+
+template <class T>
+using call_operator_t = decltype(std::declval<T&>()());
+// using add_t = decltype(std::declval<T&>() + std::declval<const B&>());
+
+/// Only works with function pointers (not member function or lamdas).
+template <typename T>
+struct is_function_pointer : std::bool_constant<std::is_function_v<std::remove_pointer_t<std::remove_reference_t<T>>>> {
+};
+
+/// Works with function pointers, member function pointers, lambdas and function objects.
+/// The 'this' argument is excluded from the arguments list for member function pointers.
+template <class>
+struct callable_args;
+
+template <class R, class... Args>
+struct callable_args<R(Args...)> {
+  using type = std::tuple<Args...>;
+
+  using return_type = R;
+};
+
+template <class R, class... Args>
+struct callable_args<R (*)(Args...)> {
+  using type = std::tuple<Args...>;
+  using return_type = R;
+};
+
+template <class R, class T, class... Args>
+struct callable_args<R (T::*)(Args...)> {
+  using type = std::tuple<Args...>;
+  using return_type = R;
+};
+
+template <class R, class T, class... Args>
+struct callable_args<R (T::*)(Args...) const> {
+  using type = std::tuple<Args...>;
+  using return_type = R;
+};
+
+template <class Fct>
+struct callable_args {
+  //    static_assert(is_detected_v<call_operator_t, Fct>, "");
+  using type = typename callable_args<decltype(&Fct::operator())>::type;
+
+  //    using type = typename callable_args<&decltype(std::declval<Fct>()())>::type;
+  //    using call_operator_t = decltype(std::declval<T&>()());
+  //    using type = typename callable_args<decltype(&Fct::operator())>::type;
+  //
+};
+
+template <class Fct>
+using callable_args_t = typename callable_args<Fct>::type;
+
+/// Works with function pointers, member function pointers, lambdas and function objects.
+template <class>
+struct callable_return_type;
+
+template <class R, class... Args>
+struct callable_return_type<R(Args...)> {
+  using type = R;
+};
+
+template <class R, class... Args>
+struct callable_return_type<R (*)(Args...)> {
+  using type = R;
+};
+
+template <class R, class T, class... Args>
+struct callable_return_type<R (T::*)(Args...)> {
+  using type = R;
+};
+
+template <class R, class T, class... Args>
+struct callable_return_type<R (T::*)(Args...) const> {
+  using type = R;
+};
+
+template <class Fct>
+struct callable_return_type {
+  using type = typename callable_return_type<decltype(&Fct::operator())>::type;
+};
+
+template <class Fct>
+using callable_return_type_t = typename callable_return_type<Fct>::type;
+
+/// Callable parameters count.
+template <class Fct>
+struct callable_args_count {
+  static constexpr std::size_t value = std::tuple_size_v<callable_args_t<Fct>>;
+};
+
+template <class Fct>
+inline constexpr std::size_t callable_args_count_v = callable_args_count<Fct>::value;
+MTS_END_NAMESPACE
+MTS_POP_MACROS

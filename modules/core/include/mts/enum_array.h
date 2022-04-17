@@ -157,9 +157,6 @@ inline constexpr bool operator>=(const enum_array_base<T, Enum>& __x, const enum
 MTS_END_NAMESPACE
 
 namespace std {
-
-//
-
 template <auto I, class T, class Enum, typename = _VMTS::enable_if_same_t<decltype(I), Enum>>
 inline constexpr T& get(_VMTS::enum_array_base<T, Enum>& a) noexcept {
   return a.template at<I>();

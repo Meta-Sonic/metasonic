@@ -25,9 +25,14 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
             -Wnullable-to-nonnull-conversion
             -Wno-missing-field-initializers
             -Wsuggest-override
+
+            # -fno-exceptions -fno-rtti
         )
 
-        if ((CMAKE_BUILD_TYPE EQUAL "Release") OR (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo"))
+        # set(D_FLAGS -fno-exceptions -fno-rtti)
+        # target_compile_options(${PROJECT_NAME} ${EXPOSURE} "$<$<CONFIG:Debug>:${D_FLAGS}>")
+
+        if (("${CMAKE_BUILD_TYPE}" MATCHES "Release") OR ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo"))
             # Release.
             target_compile_definitions(${PROJECT_NAME} ${EXPOSURE} "NDEBUG=1")
 
@@ -37,7 +42,7 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
                 ${MTS_CLANG_COMMON_FLAGS}
             )
 
-            if (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo")
+            if ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo")
                 target_compile_options(${PROJECT_NAME} ${EXPOSURE} -g)
             endif()
 
@@ -90,7 +95,7 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
             -Wpedantic
         )
 
-        if ((CMAKE_BUILD_TYPE EQUAL "Release") OR (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo"))
+        if (("${CMAKE_BUILD_TYPE}" MATCHES "Release") OR ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo"))
             # Release.
             target_compile_definitions(${PROJECT_NAME} ${EXPOSURE} "NDEBUG=1")
 
@@ -101,7 +106,7 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
                 ${MTS_GCC_COMMON_FLAGS}
             )
 
-            if (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo")
+            if ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo")
                 target_compile_options(${PROJECT_NAME} ${EXPOSURE} -g)
             endif()
         else()
@@ -123,7 +128,7 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
     # Intel.
     #-------------------------------------------------------------
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-        if ((CMAKE_BUILD_TYPE EQUAL "Release") OR (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo"))
+        if (("${CMAKE_BUILD_TYPE}" MATCHES "Release") OR ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo"))
             # Release.
             target_compile_definitions(${PROJECT_NAME} ${EXPOSURE} "NDEBUG=1" )
 
@@ -131,7 +136,7 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
                 # Flags
             )
 
-            if (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo")
+            if ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo")
                 target_compile_options(${PROJECT_NAME} ${EXPOSURE} -g)
             endif()
         else()
@@ -162,7 +167,7 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
             _SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING
         )
 
-        if ((CMAKE_BUILD_TYPE EQUAL "Release") OR (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo"))
+        if (("${CMAKE_BUILD_TYPE}" MATCHES "Release") OR ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo"))
             # Release.
             target_compile_definitions(${PROJECT_NAME} ${EXPOSURE}
                 ${MTS_MSVC_COMMON_DEFS}
@@ -172,7 +177,7 @@ function(set_mts_compile_options PROJECT_NAME EXPOSURE)
                 ${MTS_MSVC_COMMON_FLAGS}
             )
 
-            if (CMAKE_BUILD_TYPE EQUAL "RelWithDebInfo")
+            if ("${CMAKE_BUILD_TYPE}" MATCHES "RelWithDebInfo")
                 target_compile_options(${PROJECT_NAME} ${EXPOSURE} /Zi)
             endif()
 

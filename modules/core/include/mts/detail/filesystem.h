@@ -39,8 +39,12 @@
 #ifndef GHC_FILESYSTEM_H
 #define GHC_FILESYSTEM_H
 
+#include "mts/config.h"
 #include "mts/assert.h"
 #include "mts/exception.h"
+
+MTS_PUSH_MACROS
+#include "mts/detail/undef_macros.h"
 
 // #define BSD manifest constant only in
 // sys/param.h
@@ -1420,7 +1424,7 @@ namespace filesystem {
       }
       else {
   #ifdef GHC_RAISE_UNICODE_ERRORS
-        mts_throw(filesystem_error(
+        mts::throw_exception(filesystem_error(
             "Illegal code point for unicode character.", str, std::make_error_code(std::errc::illegal_byte_sequence)));
   #else
         appendUTF8(str, 0xfffd);
@@ -1528,7 +1532,7 @@ namespace filesystem {
         }
         else if (utf8_state == S_RJCT) {
 #ifdef GHC_RAISE_UNICODE_ERRORS
-          mts_throw(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
+          mts::throw_exception(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
               std::make_error_code(std::errc::illegal_byte_sequence)));
 #else
           result += static_cast<typename StringType::value_type>(0xfffd);
@@ -1539,7 +1543,7 @@ namespace filesystem {
       }
       if (utf8_state) {
 #ifdef GHC_RAISE_UNICODE_ERRORS
-        mts_throw(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
+        mts::throw_exception(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
             std::make_error_code(std::errc::illegal_byte_sequence)));
 #else
         result += static_cast<typename StringType::value_type>(0xfffd);
@@ -1566,7 +1570,7 @@ namespace filesystem {
         }
         else if (utf8_state == S_RJCT) {
 #ifdef GHC_RAISE_UNICODE_ERRORS
-          mts_throw(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
+          mts::throw_exception(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
               std::make_error_code(std::errc::illegal_byte_sequence)));
 #else
           result += static_cast<typename StringType::value_type>(0xfffd);
@@ -1577,7 +1581,7 @@ namespace filesystem {
       }
       if (utf8_state) {
 #ifdef GHC_RAISE_UNICODE_ERRORS
-        mts_throw(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
+        mts::throw_exception(filesystem_error("Illegal byte sequence for unicode character.", utf8String,
             std::make_error_code(std::errc::illegal_byte_sequence)));
 #else
         result += static_cast<typename StringType::value_type>(0xfffd);
@@ -1618,7 +1622,7 @@ namespace filesystem {
           }
           else {
 #ifdef GHC_RAISE_UNICODE_ERRORS
-            mts_throw(filesystem_error("Illegal code point for unicode character.", result,
+            mts::throw_exception(filesystem_error("Illegal code point for unicode character.", result,
                 std::make_error_code(std::errc::illegal_byte_sequence)));
 #else
             appendUTF8(result, 0xfffd);
@@ -1756,7 +1760,7 @@ namespace filesystem {
     if (!detail::validUtf8(_path)) {
       path t;
       t._path = _path;
-      mts::throw_exception<filesystem_error>(
+      mts::throw_exception(filesystem_error(
           "Illegal byte sequence for unicode character.", t, std::make_error_code(std::errc::illegal_byte_sequence));
     }
   #endif
@@ -2411,8 +2415,8 @@ namespace filesystem {
     std::string locName = loc.name();
     if (!(locName.length() >= 5
             && (locName.substr(locName.length() - 5) == "UTF-8" || locName.substr(locName.length() - 5) == "utf-8"))) {
-      mts::throw_exception<filesystem_error>("This implementation only supports UTF-8 locales!", path(_path),
-          detail::make_error_code(detail::portable_error::not_supported));
+      mts::throw_exception(filesystem_error("This implementation only supports UTF-8 locales!", path(_path),
+          detail::make_error_code(detail::portable_error::not_supported)));
     }
   }
 
@@ -2422,7 +2426,7 @@ namespace filesystem {
     std::string locName = loc.name();
     if (!(locName.length() >= 5
             && (locName.substr(locName.length() - 5) == "UTF-8" || locName.substr(locName.length() - 5) == "utf-8"))) {
-      mts_throw(filesystem_error("This implementation only supports UTF-8 locales!", path(_path),
+      mts::throw_exception(filesystem_error("This implementation only supports UTF-8 locales!", path(_path),
           detail::make_error_code(detail::portable_error::not_supported)));
     }
   }
@@ -3392,7 +3396,7 @@ namespace filesystem {
     std::error_code ec;
     path result = absolute(p, ec);
     if (ec) {
-      mts::throw_exception<filesystem_error>(detail::systemErrorText(ec.value()), p, ec);
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -3451,7 +3455,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = canonical(p, ec);
     if (ec) {
-      mts::throw_exception<filesystem_error>(detail::systemErrorText(ec.value()), p, ec);
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -3526,7 +3530,7 @@ namespace filesystem {
     std::error_code ec;
     copy(from, to, options, ec);
     if (ec) {
-      mts::throw_exception<filesystem_error>(detail::systemErrorText(ec.value()), from, to, ec);
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), from, to, ec));
     }
   }
   #endif
@@ -3622,7 +3626,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = copy_file(from, to, option, ec);
     if (ec) {
-      mts::throw_exception<filesystem_error>(detail::systemErrorText(ec.value()), from, to, ec);
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), from, to, ec));
     }
     return result;
   }
@@ -3717,7 +3721,7 @@ namespace filesystem {
     std::error_code ec;
     copy_symlink(existing_symlink, new_symlink, ec);
     if (ec) {
-      mts::throw_exception<filesystem_error>(detail::systemErrorText(ec.value()), existing_symlink, new_symlink, ec);
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), existing_symlink, new_symlink, ec));
     }
   }
   #endif
@@ -3740,7 +3744,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = create_directories(p, ec);
     if (ec) {
-      mts::throw_exception<filesystem_error>(detail::systemErrorText(ec.value()), p, ec);
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -3789,7 +3793,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = create_directory(p, path(), ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -3804,7 +3808,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = create_directory(p, attributes, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -3857,7 +3861,7 @@ namespace filesystem {
     std::error_code ec;
     create_directory_symlink(to, new_symlink, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), to, new_symlink, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), to, new_symlink, ec));
     }
   }
   #endif
@@ -3872,7 +3876,7 @@ namespace filesystem {
     std::error_code ec;
     create_hard_link(to, new_hard_link, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), to, new_hard_link, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), to, new_hard_link, ec));
     }
   }
     #endif
@@ -3887,7 +3891,7 @@ namespace filesystem {
     std::error_code ec;
     create_symlink(to, new_symlink, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), to, new_symlink, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), to, new_symlink, ec));
     }
   }
   #endif
@@ -3901,7 +3905,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = current_path(ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), ec));
     }
     return result;
   }
@@ -3933,7 +3937,7 @@ namespace filesystem {
     std::error_code ec;
     current_path(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
   }
   #endif
@@ -3970,7 +3974,7 @@ namespace filesystem {
     std::error_code ec;
     bool result = equivalent(p1, p2, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p1, p2, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p1, p2, ec));
     }
     return result;
   }
@@ -4036,7 +4040,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = file_size(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4067,7 +4071,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = hard_link_count(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4211,7 +4215,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = last_write_time(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4229,7 +4233,7 @@ namespace filesystem {
     std::error_code ec;
     last_write_time(p, new_time, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
   }
   #endif
@@ -4304,7 +4308,7 @@ namespace filesystem {
     std::error_code ec;
     permissions(p, prms, opts, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
   }
   #endif
@@ -4385,7 +4389,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = read_symlink(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4418,7 +4422,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = remove(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4477,7 +4481,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = remove_all(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4533,7 +4537,7 @@ namespace filesystem {
     std::error_code ec;
     rename(from, to, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), from, to, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), from, to, ec));
     }
   }
   #endif
@@ -4560,7 +4564,7 @@ namespace filesystem {
     std::error_code ec;
     resize_file(p, size, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
   }
   #endif
@@ -4598,7 +4602,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = space(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4634,7 +4638,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = status(p, ec);
     if (result.type() == file_type::none) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4649,7 +4653,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = symlink_status(p, ec);
     if (result.type() == file_type::none) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), ec));
     }
     return result;
   }
@@ -4664,7 +4668,7 @@ namespace filesystem {
     std::error_code ec;
     path result = temp_directory_path(ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), ec));
     }
     return result;
   }
@@ -4698,7 +4702,7 @@ namespace filesystem {
     std::error_code ec;
     auto result = weakly_canonical(p, ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), p, ec));
     }
     return result;
   }
@@ -4849,7 +4853,7 @@ namespace filesystem {
     std::error_code ec;
     refresh(ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), _path, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), _path, ec));
     }
   }
   #endif
@@ -5302,7 +5306,7 @@ namespace filesystem {
   GHC_INLINE directory_iterator::directory_iterator(const path& p)
       : _impl(new impl(p, directory_options::none)) {
     if (_impl->_ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(_impl->_ec.value()), p, _impl->_ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(_impl->_ec.value()), p, _impl->_ec));
     }
     _impl->_ec.clear();
   }
@@ -5310,7 +5314,7 @@ namespace filesystem {
   GHC_INLINE directory_iterator::directory_iterator(const path& p, directory_options options)
       : _impl(new impl(p, options)) {
     if (_impl->_ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(_impl->_ec.value()), p, _impl->_ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(_impl->_ec.value()), p, _impl->_ec));
     }
   }
   #endif
@@ -5357,7 +5361,7 @@ namespace filesystem {
     std::error_code ec;
     _impl->increment(ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()), _impl->_dir_entry._path, ec));
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()), _impl->_dir_entry._path, ec));
     }
     return *this;
   }
@@ -5456,7 +5460,7 @@ namespace filesystem {
     std::error_code ec;
     increment(ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()),
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()),
           _impl->_dir_iter_stack.empty() ? path() : _impl->_dir_iter_stack.top()->path(), ec));
     }
     return *this;
@@ -5496,7 +5500,7 @@ namespace filesystem {
     std::error_code ec;
     pop(ec);
     if (ec) {
-      mts_throw(filesystem_error(detail::systemErrorText(ec.value()),
+      mts::throw_exception(filesystem_error(detail::systemErrorText(ec.value()),
           _impl->_dir_iter_stack.empty() ? path() : _impl->_dir_iter_stack.top()->path(), ec));
     }
   }
@@ -5540,5 +5544,5 @@ namespace filesystem {
 // cleanup some macros
 #undef GHC_INLINE
 #undef GHC_EXPAND_IMPL
-
+MTS_POP_MACROS
 #endif // GHC_FILESYSTEM_H

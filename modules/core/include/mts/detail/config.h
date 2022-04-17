@@ -104,22 +104,14 @@
 // MARK: C++ version.
 //
 #undef __MTS_CPP_20__
-#undef __MTS_CPP_17__
 
 // C++ 20.
 #if __cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
   #define __MTS_CPP_20__ 1
-  #define __MTS_CPP_17__ 1
-
-// C++ 17.
-#elif __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-  #define __MTS_CPP_20__ 0
-  #define __MTS_CPP_17__ 1
 
 #else
   #define __MTS_CPP_20__ 0
-  #define __MTS_CPP_17__ 0
-  #error "mts only support c++17 and up."
+  #error "mts only support c++20 and up."
 #endif
 
 //
@@ -387,16 +379,40 @@
 #endif
 
 #undef __MTS_HAS_EXCEPTIONS__
+#undef __MTS_EXCEPTIONS_DISABLED__
 
 /// @macro MTS_HAS_EXCEPTIONS
 /// Built with exception support.
-#if __has_feature(cxx_exceptions) || (defined(__GNUC__) && defined(__EXCEPTIONS))                                      \
-    || (defined(_MSC_VER) && defined(_CPPUNWIND))
-  #define __MTS_HAS_EXCEPTIONS__ 1
-#else
-  #define __MTS_HAS_EXCEPTIONS__ 0
+///
+#if !__has_feature(cxx_exceptions)
+  #define __MTS_EXCEPTIONS_DISABLED__ 1
 #endif
+
+#if !__EXCEPTIONS
+  #define __MTS_EXCEPTIONS_DISABLED__ 1
+#endif
+
+#if __MTS_EXCEPTIONS_DISABLED__
+  #define __MTS_HAS_EXCEPTIONS__ 0
+#else
+  #define __MTS_HAS_EXCEPTIONS__ 1
+#endif
+
+//#if __has_feature(cxx_exceptions) || (defined(__GNUC__) && __EXCEPTIONS)                                      \
+//    || (defined(_MSC_VER) && defined(_CPPUNWIND))
+//  #define __MTS_HAS_EXCEPTIONS__ 1
+//#else
+//  #define __MTS_HAS_EXCEPTIONS__ 0
+//#endif
 
 #if __MTS_MACOS__ || __MTS_IOS__
   #define __MTS_USE_ACCELERATE__ 1
 #endif // __MTS_MACOS__ || __MTS_IOS__
+
+#if __MTS_MSVC__
+  #define MTS_PUSH_MACROS __pragma(push_macro("min")) __pragma(push_macro("max"))
+  #define MTS_POP_MACROS __pragma(pop_macro("min")) __pragma(pop_macro("max"))
+#else
+  #define MTS_PUSH_MACROS _Pragma("push_macro(\"min\")") _Pragma("push_macro(\"max\")")
+  #define MTS_POP_MACROS _Pragma("pop_macro(\"min\")") _Pragma("pop_macro(\"max\")")
+#endif

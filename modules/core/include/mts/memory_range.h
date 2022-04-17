@@ -44,6 +44,9 @@
 #include <iterator>
 #include <type_traits>
 
+MTS_PUSH_MACROS
+#include "mts/detail/undef_macros.h"
+
 MTS_BEGIN_NAMESPACE
 
 template <typename _Tp>
@@ -184,11 +187,13 @@ public:
 
   ~memory_range() noexcept = default;
 
-  inline constexpr memory_range sub_range(size_type __offset, size_type __count) const noexcept {
+  inline constexpr memory_range sub_range(
+      size_type __offset, size_type __count = std::numeric_limits<size_type>::max()) const noexcept {
     mts_assert(__offset <= size(), "Offset out of range in mts::memory_range::subrange(offset, count)");
-    mts_assert(__count <= size(), "count out of range in mts::memory_range::subrange(offset, count)");
-    mts_assert(
-        __count <= size() - __offset, "Offset + count out of range in mts::memory_range::subrange(offset, count)");
+    //    mts_assert(__count <= size(), "count out of range in mts::memory_range::subrange(offset, count)");
+    //    mts_assert(
+    //        __count <= size() - __offset, "Offset + count out of range in mts::memory_range::subrange(offset,
+    //        count)");
 
     __count = std::min(size() - __offset, __count);
     return { data() + __offset, __count };
@@ -407,3 +412,4 @@ inline byte_view memory_range<T>::as_byte_view() const noexcept {
 
 using byte_range = memory_range<std::uint8_t>;
 MTS_END_NAMESPACE
+MTS_POP_MACROS
