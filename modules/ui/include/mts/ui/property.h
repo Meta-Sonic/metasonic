@@ -443,15 +443,15 @@ inline bool property::is_convertible() const noexcept {
     return _type == type::object;
   }
 
-  else if constexpr (std::is_same_v<T, mts::point<int>> || std::is_same_v<T, mts::point<float>>) {
+  else if constexpr (mts::is_one_of_type_v<T, mts::point<int>, mts::point<float>>) {
     return mts::is_one_of(_type, type::point, type::fpoint);
   }
 
-  else if constexpr (std::is_same_v<T, mts::size<int>> || std::is_same_v<T, mts::size<float>>) {
+  else if constexpr (mts::is_one_of_type_v<T, mts::size<int>, mts::size<float>>) {
     return mts::is_one_of(_type, type::size, type::fsize);
   }
 
-  else if constexpr (std::is_same_v<T, mts::rect<int>> || std::is_same_v<T, mts::rect<float>>) {
+  else if constexpr (mts::is_one_of_type_v<T, mts::rect<int>, mts::rect<float>>) {
     return mts::is_one_of(_type, type::rect, type::frect);
   }
 
@@ -463,7 +463,7 @@ inline bool property::is_convertible() const noexcept {
     return _type == type::pointer;
   }
 
-  else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>) {
+  else if constexpr (mts::is_one_of_type_v<T, std::string, std::string_view>) {
     return _type == type::string_view;
   }
 

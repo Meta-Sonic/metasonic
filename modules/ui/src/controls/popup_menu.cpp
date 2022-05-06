@@ -258,9 +258,8 @@ void popup_menu::unselect_all() {
   }
 }
 
-void popup_menu::show_menu(_VMTS::view& parent, const _VMTS::point<int>& position) {
+void popup_menu::show_menu(_VMTS::view& parent, const _VMTS::point<int>& position, const _VMTS::size<int>& item_size) {
   int padding = 4;
-  _VMTS::size item_size = { 100, 22 };
   _VMTS::managed_ptr<popup_menu_content> content = _VMTS::make_managed<popup_menu_content>();
 
   popup_menu_content* cv = content.get();

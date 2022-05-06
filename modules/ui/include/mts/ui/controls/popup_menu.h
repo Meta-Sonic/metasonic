@@ -63,15 +63,13 @@ public:
     return &_items[item_index];
   }
 
-  //  inline std::vector<item>& get_items() { return _items; }
   inline const std::vector<item>& get_items() const { return _items; }
 
-  void show_menu(_VMTS::view& parent, const _VMTS::point<int>& position);
+  void show_menu(_VMTS::view& parent, const _VMTS::point<int>& position, const mts::size<int>& item_size = { 100, 22 });
 
 private:
   std::vector<item> _items;
   std::function<void(item::uid)> _callback;
-  _VMTS::weak_managed_ptr<popup_window> _window;
   item::uid _it_counter = 0;
 };
 

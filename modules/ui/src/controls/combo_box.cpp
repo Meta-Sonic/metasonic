@@ -80,7 +80,7 @@ void combo_box::callback(mts::popup_menu::item::uid item_id) {
 void combo_box::mouse_left_down(const mts::mouse_event& evt) {
 
   mts::unused(evt);
-  _menu.show_menu(*this, get_screen_position());
+  _menu.show_menu(*this, get_screen_position(), { get_width(), 22 });
 }
 
 void combo_box::update_path() {
