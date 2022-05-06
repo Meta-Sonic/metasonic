@@ -140,7 +140,7 @@ public:
 
   template <class Fct>
   struct is_thread_callback<Fct,
-      std::void_t<std::enable_if_t<!std::is_same_v<Fct, thread>, std::nullptr_t>,
+      std::void_t<std::enable_if_t<mts::is_different_v<Fct, thread>, std::nullptr_t>,
           std::enable_if_t<!_VMTS::is_unique_ptr_v<Fct>, std::nullptr_t>,
           decltype(std::declval<Fct>()(std::declval<const proxy&>()))>> : std::true_type {};
 

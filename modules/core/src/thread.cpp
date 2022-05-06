@@ -40,7 +40,6 @@ void set_thread_name(std::thread::native_handle_type handle, const char* name) {
   #ifdef _DEBUG
   const DWORD MS_VC_EXCEPTION = 0x406D1388;
 
-  //    #pragma pack(push, 8)
   MTS_PACKED_N_START(8)
   typedef struct tagTHREADNAME_INFO {
     DWORD dwType; // Must be 0x1000.
@@ -49,7 +48,6 @@ void set_thread_name(std::thread::native_handle_type handle, const char* name) {
     DWORD dwFlags; // Reserved for future use, must be zero.
   } THREADNAME_INFO;
   MTS_PACKED_END
-  //    #pragma pack(pop)
 
   DWORD dwThreadID = ::GetThreadId(static_cast<HANDLE>(handle));
 
@@ -126,7 +124,6 @@ struct thread::impl : std::enable_shared_from_this<impl> {
     _start_wait.notify();
   }
 
-  //    template <typename Fct>
   inline void run(std::shared_ptr<impl> __self, callback* cb) {
     if (_start_wait.wait()) {
 
@@ -135,11 +132,15 @@ struct thread::impl : std::enable_shared_from_this<impl> {
         return;
       }
 
+#if __MTS_HAS_EXCEPTIONS__
       try {
         cb->run(proxy(*__self));
       } catch (...) {
         mts_error("");
       }
+#else
+      cb->run(proxy(*__self));
+#endif // __MTS_HAS_EXCEPTIONS__
     }
 
     _is_running.store(false);
@@ -228,13 +229,11 @@ thread::thread(std::unique_ptr<callback> cb)
 }
 
 thread::~thread() {
-
   if (!joinable()) {
     return;
   }
 
   if (!_impl->stop(std::chrono::milliseconds(500))) {
-
     // kill.
     kill_thread(_impl->_handle);
 
@@ -246,7 +245,6 @@ thread::~thread() {
 thread& thread::operator=(thread&& t) {
   mts_assert(!joinable(), "Can't call operator= when joinable()");
   if (joinable()) {
-
     thread tmp(std::move(*this));
     _impl = std::move(t._impl);
     return *this;
@@ -298,9 +296,7 @@ bool thread::stop(const std::chrono::nanoseconds& wait_ns) {
   return false;
 }
 
-bool thread::running() const noexcept {
-  return joinable() ? _impl->running() : false;
-}
+bool thread::running() const noexcept { return joinable() ? _impl->running() : false; }
 
 bool thread::should_stop() const noexcept {
   mts_assert(joinable(), "Can't call should_stop() when not joinable()");
@@ -312,10 +308,9 @@ std::thread::id thread::id() const noexcept { return joinable() ? _impl->id() : 
 thread::handle thread::native_handle() const noexcept { return joinable() ? _impl->native_handle() : nullptr; }
 
 //
+// Thread proxy.
 //
-//
-//
-//
+
 bool thread::proxy::running() const noexcept { return _impl.running(); }
 
 bool thread::proxy::should_stop() const noexcept { return _impl.should_stop(); }
@@ -330,7 +325,7 @@ void thread::proxy::wait_for(const std::chrono::nanoseconds& wait_time) const { 
 
 void thread::proxy::wait_until(
     const std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>& timeout) const {
-        _impl.wait_until(timeout);
+  _impl.wait_until(timeout);
 }
 
 MTS_END_NAMESPACE

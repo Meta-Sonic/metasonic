@@ -52,6 +52,6 @@ cmake-xcode-release
 cmake-xcode-release/*
 cmake-xcode/*
 cmake-build/*
-build/*
+[Bb]uild*
 doc/*
 backup/*

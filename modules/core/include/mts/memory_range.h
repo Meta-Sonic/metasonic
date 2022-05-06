@@ -44,6 +44,9 @@
 #include <iterator>
 #include <type_traits>
 
+MTS_PUSH_MACROS
+#include "mts/detail/undef_macros.h"
+
 MTS_BEGIN_NAMESPACE
 
 template <typename _Tp>
@@ -184,11 +187,13 @@ public:
 
   ~memory_range() noexcept = default;
 
-  inline constexpr memory_range sub_range(size_type __offset, size_type __count) const noexcept {
+  inline constexpr memory_range sub_range(
+      size_type __offset, size_type __count = std::numeric_limits<size_type>::max()) const noexcept {
     mts_assert(__offset <= size(), "Offset out of range in mts::memory_range::subrange(offset, count)");
-    mts_assert(__count <= size(), "count out of range in mts::memory_range::subrange(offset, count)");
-    mts_assert(
-        __count <= size() - __offset, "Offset + count out of range in mts::memory_range::subrange(offset, count)");
+    //    mts_assert(__count <= size(), "count out of range in mts::memory_range::subrange(offset, count)");
+    //    mts_assert(
+    //        __count <= size() - __offset, "Offset + count out of range in mts::memory_range::subrange(offset,
+    //        count)");
 
     __count = std::min(size() - __offset, __count);
     return { data() + __offset, __count };
@@ -280,7 +285,7 @@ public:
   inline constexpr byte_view(const std::array<T, Size>& arr) noexcept
       : byte_view(memory_range<const T>(arr).as_byte_view()) {}
 
-  template <class Container, _VMTS::enable_if_ptr_t<detail::is_byte_view_compatible_container_v<Container>> = nullptr>
+  template <class Container, mts::enable_if_t<detail::is_byte_view_compatible_container_v<Container>> = mts::enabled>
   inline constexpr byte_view(const Container& c)
       : byte_view(memory_range<_VMTS::container_data_type_t<const Container>>(c.data(), c.size()).as_byte_view()) {}
 
@@ -407,3 +412,4 @@ inline byte_view memory_range<T>::as_byte_view() const noexcept {
 
 using byte_range = memory_range<std::uint8_t>;
 MTS_END_NAMESPACE
+MTS_POP_MACROS

@@ -106,7 +106,7 @@ public:
 
   inline value_type at(size_type __n) const {
     if (__n >= size()) {
-      _VMTS::throw_exception<std::out_of_range>("file_view::at");
+      _VMTS::throw_exception(std::out_of_range("file_view::at"));
     }
 
     return _data[__n];
