@@ -5,6 +5,7 @@
 #include "mts/ui/view.h"
 #include "mts/ui/application.h"
 #include "mts/print.h"
+#include "mts/unicode/convert.h"
 #include "mts/ui/native_view.h"
 #include "mts/ui/event.h"
 #include "mts/graphics/unordered_rect_set.h"
@@ -20,6 +21,7 @@
 #import <Cocoa/Cocoa.h>
 
 MTS_BEGIN_NAMESPACE
+
 
 inline CGFloat getMainScreenHeight() noexcept {
   if ([[NSScreen screens] count] == 0)
@@ -45,6 +47,37 @@ static NSWindow* create_window_instance();
 
 namespace {
 std::vector<mts::display> native_get_displays();
+
+inline char32_t convert_first_utf8_char_to_32(std::string_view s) {
+  char32_t value = 0;
+  unsigned int codepoint;
+
+  for (std::size_t i = 0; i < s.size(); i++) {
+    unsigned char ch = static_cast<unsigned char>(s[i]);
+    if (ch <= 0x7f) {
+      codepoint = ch;
+    }
+    else if (ch <= 0xbf) {
+      codepoint = (codepoint << 6) | (ch & 0x3f);
+    }
+    else if (ch <= 0xdf) {
+      codepoint = ch & 0x1f;
+    }
+    else if (ch <= 0xef) {
+      codepoint = ch & 0x0f;
+    }
+    else {
+      codepoint = ch & 0x07;
+    }
+
+    unsigned int next_char = ((i + 1) >= s.size()) ? 0 : s[i + 1];
+    if (((next_char & 0xc0) != 0x80) && (codepoint <= 0x10ffff)) {
+      value = static_cast<char32_t>(codepoint);
+    }
+  }
+
+  return value;
+}
 } // namespace.
 
 void desktop::native_desktop::init(desktop* d) { d->_displays = native_get_displays(); }
@@ -635,8 +668,7 @@ public:
     // has a Z label). Therefore, we need to query the current keyboard
     // layout to figure out what character the key would have produced
     // if the shift key was not pressed
-    std::string unmodified = [[ev charactersIgnoringModifiers] UTF8String];
-    std::u16string u16_unmod = _VMTS::utf8::utf8to16(unmodified);
+    std::u16string u16_unmod = mts::unicode::convert(std::string_view([[ev charactersIgnoringModifiers] UTF8String]));
 
     int keyCode = (int)u16_unmod[0];
     //    mts::print("KKKKKK", u16_unmod[0]);
@@ -716,7 +748,7 @@ public:
     //
     int key_code = getKeyCodeFromEvent(ev);
 
-    char32_t textCharacter = _VMTS::utf8::convert_first_utf8_char_to_32([[ev characters] UTF8String]);
+    char32_t textCharacter = convert_first_utf8_char_to_32([[ev characters] UTF8String]);
     //
     switch (key_code) {
     case NSLeftArrowFunctionKey:
@@ -747,7 +779,7 @@ public:
 
   bool on_key_up(NSEvent* ev) {
     handle_key_up(key_event(getKeyCodeFromEvent(ev), getKeyEventModifiers([ev modifierFlags]),
-        _VMTS::utf8::convert_first_utf8_char_to_32([[ev characters] UTF8String])));
+        convert_first_utf8_char_to_32([[ev characters] UTF8String])));
     return true;
   }
 

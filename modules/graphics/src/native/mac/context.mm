@@ -3,7 +3,6 @@
 #ifdef MTS_MACOS
 
 #include "mts/graphics/context.h"
-#include "mts/utf8.h"
 #include "mts/detail/mac_cf_helpers.h"
 #include "helpers.h"
 
@@ -322,7 +321,6 @@ void context::draw_text_left_aligned(font& f, const std::u32string& text, const 
       = mts::create_cf_dictionary({ kCTFontAttributeName, kCTForegroundColorFromContextAttributeName },
           { (CTFontRef)f.get_native_font(), kCFBooleanTrue });
 
-  //  dnft::print("NMNMNMMN", text, mts::utf8::utf32to8(text));
   mts::cf_unique_ptr<CFStringRef> str = mts::create_cf_string_from_u32string(text);
 
   mts::cf_unique_ptr<CFAttributedStringRef> attr_str

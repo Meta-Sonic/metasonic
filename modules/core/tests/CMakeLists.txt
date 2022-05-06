@@ -20,5 +20,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
+    MTS_UNIT_TESTS=1
     MTS_TEST_RESOURCES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/resources"
 )

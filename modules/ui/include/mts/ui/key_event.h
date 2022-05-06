@@ -34,7 +34,7 @@
 #pragma once
 #include "mts/config.h"
 #include "mts/flags.h"
-#include "mts/utf8.h"
+#include "mts/unicode/convert.h"
 #include "mts/util.h"
 #include "mts/ui/key_modifiers.h"
 #include <string_view>
@@ -63,7 +63,7 @@ public:
   key_event& operator=(key_event&&) = default;
 
   inline char32_t get_char() const { return _char; }
-  inline std::string get_string() const { return _VMTS::utf8::utf32to8(std::u32string_view(&_char, 1)); }
+  inline std::string get_string() const { return mts::unicode::convert_as<char>(std::u32string_view(&_char, 1)); }
 
   inline key_code get_key_code() const noexcept { return _key_code; }
 
