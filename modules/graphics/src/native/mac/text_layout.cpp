@@ -4,7 +4,7 @@
 
   #include "mts/graphics/text_layout.h"
   #include "mts/assert.h"
-  #include "mts/utf8.h"
+  #include "mts/unicode/convert.h"
   #include "mts/pointer.h"
   #include "mts/final_action.h"
 
@@ -404,12 +404,6 @@ line::line(const mts::font& f, std::u32string&& text)
   _line = new native_line_impl(this);
 }
 
-// line::line(const mts::font& f, const std::string& text)
-//     : _font(f)
-//     , _text(mts::utf8::utf8to32(text)) {
-//   _line = new ct_native_line(this);
-// }
-
 line::line(const mts::font& f, std::u32string_view text)
     : _font(f)
     , _text(text) {
@@ -418,7 +412,7 @@ line::line(const mts::font& f, std::u32string_view text)
 
 line::line(const mts::font& f, std::string_view text)
     : _font(f)
-    , _text(mts::utf8::utf8to32(text)) {
+    , _text(mts::unicode::convert_as<char32_t>(text)) {
   _line = new native_line_impl(this);
 }
 
@@ -492,7 +486,7 @@ void line::set_text(std::u32string_view text, bool replace_tabs) {
 }
 
 void line::set_text(std::u16string_view text, bool replace_tabs) {
-  _text = mts::utf8::utf8to32(mts::utf8::utf16to8(text));
+  _text = mts::unicode::convert(text);
 
   if (replace_tabs) {
     std::replace(_text.begin(), _text.end(), '\t', ' ');
@@ -501,7 +495,7 @@ void line::set_text(std::u16string_view text, bool replace_tabs) {
 }
 
 void line::set_text(std::string_view text, bool replace_tabs) {
-  _text = mts::utf8::utf8to32(text);
+  _text = mts::unicode::convert(text);
 
   if (replace_tabs) {
     std::replace(_text.begin(), _text.end(), '\t', ' ');
@@ -510,9 +504,9 @@ void line::set_text(std::string_view text, bool replace_tabs) {
   native_line_impl::to_ct_native_line(_line)->update();
 }
 
-std::u16string line::get_text_utf16() const { return mts::utf8::utf8to16(get_text_utf8()); }
-std::string line::get_text_utf8() const { return mts::utf8::utf32to8(_text); }
-std::string line::get_text() const { return mts::utf8::utf32to8(_text); }
+std::u16string line::get_text_utf16() const { return mts::unicode::convert_as<char16_t>(_text); }
+std::string line::get_text_utf8() const { return mts::unicode::convert_as<char>(_text); }
+std::string line::get_text() const { return mts::unicode::convert_as<char>(_text); }
 
 void line::set_password(bool is_password) { _is_password = is_password; }
 

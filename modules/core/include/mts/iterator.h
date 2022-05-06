@@ -34,6 +34,7 @@
 #pragma once
 #include "mts/config.h"
 #include <iterator>
+#include <algorithm>
 
 MTS_BEGIN_NAMESPACE
 template <typename IteratorT>

@@ -4,7 +4,7 @@
 
 #include "mts/graphics/font.h"
 #include "mts/final_action.h"
-#include "mts/utf8.h"
+#include "mts/unicode/convert.h"
 #include "mts/assert.h"
 #include "mts/print.h"
 
@@ -235,42 +235,6 @@ float font::get_string_width(std::string_view text) const {
   return x;
 }
 
-// float font::get_string_width(std::u32string_view text) const {
-//   if (text.empty() || !is_valid()) {
-//     return 0;
-//   }
-//
-//   mts::cf_unique_ptr<CFDictionaryRef> attributes = mts::create_cf_dictionary(
-//       { kCTFontAttributeName, kCTLigatureAttributeName }, { (CTFontRef)_font, kCFBooleanTrue });
-//
-////  dnft::print("lkasjdjlakjdsa", text);
-////  std::string u8str = mts::utf8::utf32to8(text);
-////  mts::cf_unique_ptr<CFStringRef> str = mts::create_cf_string_from_string_view(u8str);
-//
-//  mts::cf_unique_ptr<CFStringRef> str = mts::create_cf_string_from_u32string_view(text);
-//
-//  mts::cf_unique_ptr<CFAttributedStringRef> attr_str
-//      = CFAttributedStringCreate(kCFAllocatorDefault, str, attributes);
-//
-//  mts::cf_unique_ptr<CTLineRef> line = CTLineCreateWithAttributedString(attr_str);
-//  CFArrayRef run_array = CTLineGetGlyphRuns(line);
-//
-//  float x = 0;
-//
-//  for (CFIndex i = 0; i < CFArrayGetCount(run_array); ++i) {
-//    CTRunRef run = (CTRunRef)CFArrayGetValueAtIndex(run_array, i);
-//    CFIndex length = CTRunGetGlyphCount(run);
-//
-//    const Advances advances(run, length);
-//
-//    for (CFIndex j = 0; j < length; j++) {
-//      x += (float)advances.advances[j].width;
-//    }
-//  }
-//
-//  return x;
-//}
-
 float font::get_string_width(std::u32string_view text) const {
   //  if (text.empty() || !is_valid()) {
   //    return 0;
@@ -464,7 +428,7 @@ path font::get_glyph_outline(glyph_index index) const {
 }
 
 std::vector<font::glyph_index> font::get_glyph_indexes(std::string_view text) const {
-  std::u16string chars = mts::utf8::utf8to16(text);
+    std::u16string chars = mts::unicode::convert(text);
   std::vector<CGGlyph> glyphs;
   glyphs.resize(chars.size(), invalid_glyph_index);
 
@@ -498,9 +462,8 @@ font::glyph_index font::get_glyph_index(char16_t c) const {
   return invalid_glyph_index;
 }
 
-font::glyph_index font::get_glyph_index(char32_t c) const {
-  std::string u8 = mts::utf8::utf32to8(std::u32string_view(&c, 1));
-  std::u16string chars = mts::utf8::utf8to16(mts::utf8::utf32to8(std::u32string_view(&c, 1)));
+font::glyph_index font::get_glyph_index(char32_t c) const {    
+    std::u16string chars = mts::unicode::convert(std::u32string_view(&c, 1));
 
   if (chars.empty()) {
     return invalid_glyph_index;
@@ -517,7 +480,7 @@ font::glyph_index font::get_glyph_index(char32_t c) const {
 }
 
 font::glyph_index font::get_glyph_index(std::string_view c) const {
-  std::u16string chars = mts::utf8::utf8to16(c);
+  std::u16string chars = mts::unicode::convert(c);
   if (chars.empty()) {
     return invalid_glyph_index;
   }

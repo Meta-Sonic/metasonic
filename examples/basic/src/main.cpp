@@ -1,6 +1,5 @@
 #include <iostream>
 #include "mts/ui/application.h"
-#include "mts/utf8.h"
 
 #include "main_window.h"
 
