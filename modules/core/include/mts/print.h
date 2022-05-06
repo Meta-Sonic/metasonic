@@ -44,11 +44,11 @@ MTS_PUSH_MACROS
 #include "mts/detail/undef_macros.h"
 
 MTS_BEGIN_NAMESPACE
-template <typename T>
-inline void print_element(std::ostream& stream, const T& t);
+template <typename T, class CharT, class TraitsT>
+inline void print_element(std::basic_ostream<CharT, TraitsT>& stream, const T& t);
 
-template <std::size_t I = 0, typename... Tp>
-inline void print_tuple(std::ostream& stream, const std::tuple<Tp...>& t) {
+template <std::size_t I = 0, typename... Tp, class CharT, class TraitsT>
+inline void print_tuple(std::basic_ostream<CharT, TraitsT>& stream, const std::tuple<Tp...>& t) {
   if constexpr (I < sizeof...(Tp) - 1) {
     print_element(stream, std::get<I>(t));
     stream << ", ";
@@ -60,14 +60,23 @@ inline void print_tuple(std::ostream& stream, const std::tuple<Tp...>& t) {
   }
 }
 
-template <typename T>
-inline void print_element(std::ostream& stream, const T& t) {
+template <typename T, class CharT, class TraitsT>
+inline void print_element(std::basic_ostream<CharT, TraitsT>& stream, const T& t) {
+  using is_normal_stream = std::is_same<char, CharT>;
+  using is_wide_stream = std::is_same<wchar_t, CharT>;
+  using other_char_t = mts::conditional_t<is_normal_stream, wchar_t, is_wide_stream, char, std::nullptr_t>;
+
   if constexpr (std::is_same_v<bool, T>) {
     std::ios_base::fmtflags flags = stream.flags(std::ios_base::boolalpha);
     stream << t;
     stream.setf(flags, std::ios_base::boolalpha);
   }
-  else if constexpr (_VMTS::has_ostream_v<T>) {
+  else if constexpr (mts::is_basic_string_view_convertible_v<T, other_char_t>) {
+    for (auto c : std::basic_string_view<other_char_t>(t)) {
+      stream << std::char_traits<CharT>::to_char_type(std::char_traits<other_char_t>::to_int_type(c));
+    }
+  }
+  else if constexpr (mts::has_basic_ostream_v<CharT, T>) {
     stream << t;
   }
   else if constexpr (_VMTS::is_iterable_v<T>) {
@@ -145,8 +154,34 @@ struct colon_string {
   static constexpr const char* value = " : ";
 };
 
-template <typename D = comma_space_string, typename T, typename... Ts>
-inline void basic_print(std::ostream& stream, const T& t, const Ts&... ts) {
+// wchar_t.
+
+struct empty_wstring {
+  static constexpr const wchar_t* value = L"";
+};
+
+struct space_wstring {
+  static constexpr const wchar_t* value = L" ";
+};
+
+struct comma_wstring {
+  static constexpr const wchar_t* value = L",";
+};
+
+struct comma_space_wstring {
+  static constexpr const wchar_t* value = L", ";
+};
+
+struct equal_wstring {
+  static constexpr const wchar_t* value = L" = ";
+};
+
+struct colon_wstring {
+  static constexpr const wchar_t* value = L" : ";
+};
+
+template <typename D = comma_space_string, typename T, typename... Ts, class CharT, class TraitsT>
+inline void basic_print(std::basic_ostream<CharT, TraitsT>& stream, const T& t, const Ts&... ts) {
   if constexpr (sizeof...(ts) > 0) {
     print_element(stream, t);
     stream << D::value;
@@ -158,8 +193,20 @@ inline void basic_print(std::ostream& stream, const T& t, const Ts&... ts) {
   }
 }
 
-template <typename D = comma_space_string, typename Msg, typename T, typename... Ts>
-inline void basic_header_print(std::ostream& stream, Msg&& msg, const T& t, const Ts&... ts) {
+template <typename D = comma_space_string, typename T, typename... Ts, class CharT, class TraitsT>
+inline void basic_print_no_endl(std::basic_ostream<CharT, TraitsT>& stream, const T& t, const Ts&... ts) {
+  if constexpr (sizeof...(ts) > 0) {
+    print_element(stream, t);
+    stream << D::value;
+    basic_print_no_endl<D>(stream, ts...);
+  }
+  else {
+    print_element(stream, t);
+  }
+}
+
+template <typename D = comma_space_string, typename Msg, typename T, typename... Ts, class CharT, class TraitsT>
+inline void basic_header_print(std::basic_ostream<CharT, TraitsT>& stream, Msg&& msg, const T& t, const Ts&... ts) {
   stream << "[" << msg << "] : ";
   basic_print<D>(stream, t, ts...);
 }
@@ -167,6 +214,11 @@ inline void basic_header_print(std::ostream& stream, Msg&& msg, const T& t, cons
 template <typename D = comma_space_string, typename T, typename... Ts>
 inline void print(const T& t, const Ts&... ts) {
   basic_print<D>(std::cout, t, ts...);
+}
+
+template <typename D = comma_space_string, typename T, typename... Ts>
+inline void print_no_endl(const T& t, const Ts&... ts) {
+  basic_print_no_endl<D>(std::cout, t, ts...);
 }
 
 template <typename D = comma_space_string, typename T, typename... Ts>
@@ -181,7 +233,27 @@ inline void warnprint(const T& t, const Ts&... ts) {
 
 template <typename D = comma_space_string, typename T, typename... Ts>
 inline void tmprint(const T& t, const Ts&... ts) {
-  basic_header_print<D>(std::cout, current_timems_string(), t, ts...);
+  basic_header_print<D>(std::cout, current_time_ms_string(), t, ts...);
+}
+
+template <typename D = comma_space_wstring, typename T, typename... Ts>
+inline void wprint(const T& t, const Ts&... ts) {
+  basic_print<D>(std::wcout, t, ts...);
+}
+
+template <typename D = comma_space_string, typename T, typename... Ts>
+inline void werrprint(const T& t, const Ts&... ts) {
+  basic_header_print<D>(std::wcerr, L" ERROR ", t, ts...);
+}
+
+template <typename D = comma_space_string, typename T, typename... Ts>
+inline void wwarnprint(const T& t, const Ts&... ts) {
+  basic_header_print<D>(std::wcerr, L"WARNING", t, ts...);
+}
+
+template <typename D = comma_space_string, typename T, typename... Ts>
+inline void wtmprint(const T& t, const Ts&... ts) {
+  basic_header_print<D>(std::wcout, current_time_ms_wstring(), t, ts...);
 }
 
 namespace custom_print_detail {

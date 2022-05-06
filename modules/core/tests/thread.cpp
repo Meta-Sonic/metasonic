@@ -19,26 +19,7 @@ void thread_join(int& count) {
   t.join();
 }
 
-// void thread_join(int& count) {
-//     int value = 1;
-//     std::unique_ptr<int> a;
-//
-//     auto cc = [&](const mts::thread::proxy& p) {
-//         //        mts::set_thread_name(p.native_handle(), "KL");
-//                 p.wait_for(std::chrono::seconds(1));
-//                 EXPECT_EQ(value, 2);
-//                 count++;
-//     };
-//     mts::thread t(cc);
-//
-//     value = 2;
-//     t.notify();
-//     t.join();
-// }
-
 TEST(thread, wait) {
-
-  std::cout << "DSLKDJSKDJSLKDJSKLDJSKLDJ " << sizeof(mts::thread) << std::endl;
   int count = 0;
   for (int i = 0; i < 1000; i++) {
     thread_join(count);

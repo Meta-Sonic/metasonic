@@ -285,7 +285,7 @@ public:
   inline constexpr byte_view(const std::array<T, Size>& arr) noexcept
       : byte_view(memory_range<const T>(arr).as_byte_view()) {}
 
-  template <class Container, _VMTS::enable_if_ptr_t<detail::is_byte_view_compatible_container_v<Container>> = nullptr>
+  template <class Container, mts::enable_if_t<detail::is_byte_view_compatible_container_v<Container>> = mts::enabled>
   inline constexpr byte_view(const Container& c)
       : byte_view(memory_range<_VMTS::container_data_type_t<const Container>>(c.data(), c.size()).as_byte_view()) {}
 
