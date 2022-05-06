@@ -49,11 +49,6 @@ public:
 
   ~shared_singleton() = default;
 
-  //  inline static pointer get() {
-  //    mts_assert(is_retained(), "Can't access shared_singleton if it is not retained somewhere.");
-  //    return get_weak().lock().get();
-  //  }
-
   inline static shared get() {
     mts_assert(is_retained(), "Can't access shared_singleton if it is not retained somewhere.");
     return get_weak().lock();
@@ -105,7 +100,6 @@ private:
     if (!__instance_ref.use_count()) {
       static_assert(std::is_constructible<value_type, Args...>::value, "Can't construct object in scoped_singleton.");
       shared instance = std::make_shared<value_type>(std::forward<Args>(args)...);
-      //      shared instance(new value_type(std::forward<Args>(args)...));
       __instance_ref = instance;
       return instance;
     }

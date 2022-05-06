@@ -7,7 +7,7 @@ set(MTS_AUDIO_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(MTS_AUDIO_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 file(GLOB_RECURSE MTS_AUDIO_HEADER_FILES "${MTS_AUDIO_INCLUDE_DIRECTORY}/*.h")
-file(GLOB_RECURSE MTS_AUDIO_SOURCE_FILES "${MTS_AUDIO_SOURCE_DIRECTORY}/*.cpp")
+file(GLOB_RECURSE MTS_AUDIO_SOURCE_FILES "${MTS_AUDIO_SOURCE_DIRECTORY}/*.cpp" "${MTS_AUDIO_SOURCE_DIRECTORY}/*.h")
 
 source_group(TREE "${MTS_AUDIO_INCLUDE_DIRECTORY}/mts/audio" PREFIX include FILES ${MTS_AUDIO_HEADER_FILES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${MTS_AUDIO_SOURCE_FILES})
@@ -22,7 +22,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${MTS_AUDIO_INCLUDE_DIRECTORY}
 target_link_libraries(${PROJECT_NAME} PUBLIC mts::core)
 
 if (APPLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE "-framework Accelerate")
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        "-framework CoreFoundation"
+        "-framework CoreAudio"
+        "-framework Accelerate")
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -75,3 +75,27 @@ function(mts_fetch_miniz repoPrefix prefix)
         LIBS miniz
     )
 endfunction()
+
+#
+# libuv.
+#
+function(mts_fetch_libuv repoPrefix prefix)
+    macro(Options)
+        set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+        set(LIBUV_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        set(LIBUV_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+    endmacro()
+
+    mts_fetch_library(
+        TARGET_NAME libuv
+        REPO_PREFIX ${repoPrefix}
+        FOLDER_PREFIX ${prefix}
+        GIT_REPOSITORY https://github.com/libuv/libuv.git
+        GIT_TAG 988f2bfc4defb9a85a536a3e645834c161143ee0
+        OPTIONS_MACRO Options
+        LIBS uv uv_a
+    )
+
+    set_target_properties(uv PROPERTIES XCODE_GENERATE_SCHEME NO)
+    set_target_properties(uv_a PROPERTIES XCODE_GENERATE_SCHEME NO)
+endfunction()

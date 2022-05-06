@@ -1,3 +1,4 @@
+
 #include "mts/print.h"
 #include <map>
 #include <string>
@@ -52,6 +53,7 @@ inline void print_example_index() {
   static int index = 1;
   std::cout << "#" << std::setfill('0') << std::setw(2) << index++ << ": ";
 }
+# 2 "43"
 
 int main(int argc, const char* argv[]) {
   // Normal print.

@@ -1,0 +1,24 @@
+project(mts-ui-tests)
+
+# Sources.
+set(TESTS_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+file(GLOB_RECURSE SOURCES "${TESTS_SOURCE_DIRECTORY}/*.h" "${TESTS_SOURCE_DIRECTORY}/*.cpp")
+source_group(TREE ${TESTS_SOURCE_DIRECTORY} FILES ${SOURCES})
+
+# Target.
+add_executable(${PROJECT_NAME})
+
+target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${TESTS_SOURCE_DIRECTORY})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE mts::core mts::ui gtest)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    FOLDER ${MTS_TESTS_FOLDER_NAME}
+    RUNTIME_OUTPUT_DIRECTORY ${MTS_TESTS_OUTPUT_DIRECTORY}
+)
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    MTS_TEST_RESOURCES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/resources"
+)

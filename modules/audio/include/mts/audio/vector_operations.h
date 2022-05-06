@@ -121,4 +121,33 @@ inline void tanh(const T* s1, T* d1, length_t length) {
   detail::op<O>::tanh(s1, d1, length);
 }
 
+template <typename O = optimized_op, typename T>
+inline void convert_from_int8(const std::int8_t* input, stride_t input_stride, T* output, length_t size) {
+  detail::op<O>::convert_from_int8(input, input_stride, output, size);
+}
+
+template <typename O = optimized_op, typename T>
+inline void convert_from_int16(const std::int16_t* input, stride_t input_stride, T* output, length_t size) {
+  detail::op<O>::convert_from_int16(input, input_stride, output, size);
+}
+
+template <typename O = optimized_op, typename T>
+inline void convert_from_int24(const mts::int24_t* input, stride_t input_stride, T* output, length_t size) {
+  detail::op<O>::convert_from_int24(input, input_stride, output, size);
+}
+
+template <typename O = optimized_op, typename T>
+inline void convert_from_int32(const std::int32_t* input, stride_t input_stride, T* output, length_t size) {
+  detail::op<O>::convert_from_int32(input, input_stride, output, size);
+}
+
+template <typename O = optimized_op, typename T>
+inline void convert_from_float(const float* input, stride_t input_stride, T* output, length_t size) {
+  detail::op<O>::convert_from_float(input, input_stride, output, size);
+}
+
+template <typename O = optimized_op, typename T>
+inline void convert_from_double(const double* input, stride_t input_stride, T* output, length_t size) {
+  detail::op<O>::convert_from_double(input, input_stride, output, size);
+}
 MTS_END_SUB_NAMESPACE(vec)

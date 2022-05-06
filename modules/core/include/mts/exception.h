@@ -33,18 +33,24 @@
 
 #pragma once
 #include "mts/config.h"
+#include "mts/traits.h"
 #include <cstdlib>
 #include <exception>
 #include <iostream>
 
 MTS_BEGIN_NAMESPACE
-template <typename ExceptionType, typename... Args,
-    std::enable_if_t<std::is_base_of_v<std::exception, ExceptionType>, std::nullptr_t> = nullptr>
-inline void throw_exception(Args&&... args) {
+template <typename ExceptionType>
+MTS_ATTRIBUTE_NO_RETURN inline void throw_exception(ExceptionType&& e) {
 #if __MTS_HAS_EXCEPTIONS__
-  throw ExceptionType(std::forward<Args>(args)...);
+  throw std::forward<ExceptionType>(e);
 #else
-  std::cerr << ExceptionType(std::forward<Args>(args)...).what() << std::endl;
+  if constexpr (std::is_base_of_v<std::exception, ExceptionType>) {
+    std::cerr << e.what() << std::endl;
+  }
+  else if constexpr (_VMTS::has_ostream_v<ExceptionType>) {
+    std::cerr << e << std::endl;
+  }
+
   std::abort();
 #endif // __MTS_HAS_EXCEPTIONS__
 }

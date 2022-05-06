@@ -37,7 +37,6 @@
 #include "mts/error.h"
 #include "mts/enum_array.h"
 #include "mts/enum_bitset.h"
-#include "mts/enum_set.h"
 #include "mts/file_view.h"
 #include "mts/int24_t.h"
 #include "mts/math.h"

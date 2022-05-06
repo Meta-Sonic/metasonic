@@ -35,6 +35,9 @@
 #include "mts/config.h"
 #include <algorithm>
 
+MTS_PUSH_MACROS
+#include "mts/detail/undef_macros.h"
+
 MTS_BEGIN_NAMESPACE
 template <typename T>
 struct range {
@@ -68,3 +71,4 @@ inline constexpr range<T> make_range(T min, T max) {
   return range<T>{ min, max };
 }
 MTS_END_NAMESPACE
+MTS_POP_MACROS

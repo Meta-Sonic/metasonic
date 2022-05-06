@@ -33,6 +33,7 @@
 
 #pragma once
 #include "mts/config.h"
+#include "mts/int24_t.h"
 #include "mts/math.h"
 #include <algorithm>
 #include <cstddef>
@@ -57,7 +58,13 @@
   _(sin);                                                                                                              \
   _(cos);                                                                                                              \
   _(tan);                                                                                                              \
-  _(tanh)
+  _(tanh);                                                                                                             \
+  _(convert_from_int8);                                                                                                \
+  _(convert_from_int16);                                                                                               \
+  _(convert_from_int24);                                                                                               \
+  _(convert_from_int32);                                                                                               \
+  _(convert_from_float);                                                                                               \
+  _(convert_from_double)
 
 #define __MTS_AUDIO_OPS_DECLARE_USING() __MTS_AUDIO_OP_LIST(__MTS_AUDIO_USING_OP)
 
@@ -203,6 +210,183 @@ public:
       *d1++ = std::tanh(*s1++);
     }
   }
+
+  template <typename T>
+  static inline void convert_from_int8(const std::int8_t* input, stride_t input_stride, T* output, length_t size) {
+    for (length_t i = 0; i < size; i++) {
+      output[i] = input[i * input_stride];
+    }
+  }
+
+  template <typename T>
+  static inline void convert_from_int16(const std::int16_t* input, stride_t input_stride, T* output, length_t size) {
+    for (length_t i = 0; i < size; i++) {
+      output[i] = input[i * input_stride];
+    }
+  }
+
+  template <typename T>
+  static inline void convert_from_int24(const mts::int24_t* s1, stride_t s_s1, T* d1, length_t length) {
+    //      for (length_t i = 0; i < length; i++) {
+    //        d1[i] = (std::int32_t)s1[i * s_s1];
+    //      }
+
+    while (length--) {
+      *d1++ = (std::int32_t)sincr(s1, s_s1);
+    }
+  }
+
+  template <typename T>
+  static inline void convert_from_int32(const std::int32_t* input, stride_t input_stride, T* output, length_t size) {
+    for (length_t i = 0; i < size; i++) {
+      output[i] = input[i * input_stride];
+    }
+  }
+
+  template <typename T>
+  static inline void convert_from_float(const float* input, stride_t input_stride, T* output, length_t size) {
+    if constexpr (std::is_same<T, float>::value) {
+      copy(input, input_stride, output, 1, size);
+    }
+    else {
+      for (length_t i = 0; i < size; i++) {
+        output[i] = input[i * input_stride];
+      }
+    }
+  }
+
+  template <typename T>
+  static inline void convert_from_double(const double* input, stride_t input_stride, T* output, length_t size) {
+    if constexpr (std::is_same<T, double>::value) {
+      copy(input, input_stride, output, 1, size);
+    }
+    else {
+      for (length_t i = 0; i < size; i++) {
+        output[i] = input[i * input_stride];
+      }
+    }
+  }
 };
 
 MTS_END_SUB_NAMESPACE(vec)
+
+//
+////
+//// Convert.
+////
+//
+////
+//// convert_from_int8.
+////
+//
+//
+//#ifdef __DKT_USE_APPLE_ACCELERATE__
+// template <>
+// inline void convert_from_int8<float>(
+//    const std::int8_t* input, std::size_t input_stride, float* output, std::size_t size) {
+//  vDSP_vflt8((const char*)input, input_stride, output, 1, size);
+//}
+//
+// template <>
+// inline void convert_from_int8<double>(
+//    const std::int8_t* input, std::size_t input_stride, double* output, std::size_t size) {
+//  vDSP_vflt8D((const char*)input, input_stride, output, 1, size);
+//}
+//#endif // __DKT_USE_APPLE_ACCELERATE__
+//
+////
+//// convert_from_int16.
+////
+//
+//
+//#ifdef __DKT_USE_APPLE_ACCELERATE__
+// template <>
+// inline void convert_from_int16<float>(
+//    const std::int16_t* input, std::size_t input_stride, float* output, std::size_t size) {
+//  vDSP_vflt16(input, input_stride, output, 1, size);
+//}
+//
+// template <>
+// inline void convert_from_int16<double>(
+//    const std::int16_t* input, std::size_t input_stride, double* output, std::size_t size) {
+//  vDSP_vflt16D(input, input_stride, output, 1, size);
+//}
+//#endif // __DKT_USE_APPLE_ACCELERATE__
+//
+////
+//// convert_from_int24.
+////
+//
+//
+//#ifdef __DKT_USE_APPLE_ACCELERATE__
+// template <>
+// inline void convert_from_int24<float>(
+//    const fst::int24_t* input, std::size_t input_stride, float* output, std::size_t size) {
+//  vDSP_vflt24((const vDSP_int24*)input, (vDSP_Stride)input_stride, output, 1, (vDSP_Length)size);
+//}
+//
+//// No vDSP implementation for double.
+//
+//#endif // __DKT_USE_APPLE_ACCELERATE__
+//
+////
+//// convert_from_int32.
+////
+//
+//
+//#ifdef __DKT_USE_APPLE_ACCELERATE__
+// template <>
+// inline void convert_from_int32<float>(
+//    const std::int32_t* input, std::size_t input_stride, float* output, std::size_t size) {
+//  vDSP_vflt32(input, input_stride, output, 1, size);
+//}
+//
+// template <>
+// inline void convert_from_int32<double>(
+//    const std::int32_t* input, std::size_t input_stride, double* output, std::size_t size) {
+//  vDSP_vflt32D(input, input_stride, output, 1, size);
+//}
+//#endif // __DKT_USE_APPLE_ACCELERATE__
+//
+////
+//// convert_from_float.
+////
+//
+//
+//#ifdef __DKT_USE_APPLE_ACCELERATE__
+//// Float to float.
+// template <>
+// inline void convert_from_float<float>(const float* input, std::size_t input_stride, float* output, std::size_t size)
+// {
+//   copy(output, input, input_stride, size);
+// }
+//
+//// Float to double.
+// template <>
+// inline void convert_from_float<double>(const float* input, std::size_t input_stride, double* output, std::size_t
+// size) {
+//   vDSP_vspdp(input, (vDSP_Stride)input_stride, output, 1, (vDSP_Length)size);
+// }
+//#endif // __DKT_USE_APPLE_ACCELERATE__
+//
+////
+//// convert_from_double.
+////
+//
+//
+//#ifdef __DKT_USE_APPLE_ACCELERATE__
+//
+//// Double to float.
+// template <>
+// inline void convert_from_double<float>(const double* input, std::size_t input_stride, float* output, std::size_t
+// size) {
+//   vDSP_vdpsp(input, (vDSP_Stride)input_stride, output, 1, (vDSP_Length)size);
+// }
+//
+//// Double to Double.
+// template <>
+// inline void convert_from_double<double>(
+//     const double* input, std::size_t input_stride, double* output, std::size_t size) {
+//   copy(output, input, input_stride, size);
+// }
+//#endif // __DKT_USE_APPLE_ACCELERATE__
