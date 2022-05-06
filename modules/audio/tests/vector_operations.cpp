@@ -186,8 +186,11 @@ TEST(audio_vector_operations, sin) {
     std::vector<float> a = { 1, 2, 3, 4, 5 };
     std::vector<float> b(5, 0);
     mts::vec::sin(a.data(), b.data(), a.size());
-    EXPECT_EQ(
-        b, (std::vector<float>{ std::sin(1.0f), std::sin(2.0f), std::sin(3.0f), std::sin(4.0f), std::sin(5.0f) }));
+
+    std::vector<float> vec{ std::sin(1.0f), std::sin(2.0f), std::sin(3.0f), std::sin(4.0f), std::sin(5.0f) };
+    for (std::size_t i = 0; i < b.size(); i++) {
+      EXPECT_FLOAT_EQ(b[i], vec[i]);
+    }
   }
 }
 

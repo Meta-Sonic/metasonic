@@ -24,5 +24,5 @@ protected:
 private:
   mts::color _color = 0x0000FFFF;
   main_view _content;
-//  mts::view _view;
+  //  mts::view _view;
 };

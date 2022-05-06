@@ -1,13 +1,13 @@
 //#pragma once
 //#include "mts/view.h"
 //
-//class settings_view : public mts::view {
-//public:
+// class settings_view : public mts::view {
+// public:
 //  settings_view();
 //
 //  virtual ~settings_view() override;
 //
-//protected:
+// protected:
 //  virtual void mouse_left_down(const mts::mouse_event& evt) override;
 //  virtual void mouse_left_drag(const mts::mouse_event& evt) override;
 //  virtual void mouse_left_up(const mts::mouse_event& evt) override;
@@ -15,7 +15,7 @@
 //  virtual void bounds_changed(const mts::view::bounds_status& bs) override;
 //  virtual void paint(mts::graphics::context& gc, const mts::frect& dirty_rect) override;
 //
-//private:
+// private:
 //  mts::label _label;
 //  mts::label _cb_label;
 //  mts::button _button;

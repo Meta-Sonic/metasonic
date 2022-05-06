@@ -1,13 +1,13 @@
 //#pragma once
 //#include "mts/view.h"
 //
-//class popup_menu : public mts::window, private mts::view::listener {
-//public:
+// class popup_menu : public mts::window, private mts::view::listener {
+// public:
 //  popup_menu(mts::view& __view);
 //
 //  virtual ~popup_menu() override;
 //
-//protected:
+// protected:
 //  //  virtual void bounds_changed(const mts::view::bounds_status& bs) override;
 //  virtual void view_visibility_changed(mts::view& v) override;
 //  virtual void view_focus_changed(mts::view& v, bool focused) override;
@@ -18,6 +18,6 @@
 //  ////    return {mts::maximum(frame_size.width, 200), mts::maximum(frame_size.height, 200)};
 //  //  }
 //
-//private:
+// private:
 //  mts::view& _view;
 //};
