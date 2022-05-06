@@ -33,6 +33,7 @@
 
 #pragma once
 #include "mts/assert.h"
+#include "mts/traits.h"
 #include <algorithm>
 #include <cstddef>
 #include <iostream>
@@ -41,6 +42,17 @@
 #include <iosfwd>
 
 MTS_BEGIN_NAMESPACE
+
+template <typename T>
+inline static T* pointer_offset(T* ptr, std::ptrdiff_t offset) {
+  return reinterpret_cast<T*>(((std::byte*)ptr) + offset);
+}
+
+template <typename OutputType, typename InputType>
+inline static OutputType* pointer_offset_cast(InputType* ptr, std::ptrdiff_t offset) {
+  return reinterpret_cast<OutputType*>(((std::byte*)ptr) + offset);
+}
+
 template <typename T>
 using maybe_null = T;
 
@@ -109,7 +121,7 @@ public:
     mts_assert(_ptr != nullptr, "Pointer is null.");
   }
 
-  template <typename = std::enable_if_t<!std::is_same_v<std::nullptr_t, T>>>
+  template <typename = std::enable_if_t<mts::is_different_v<std::nullptr_t, T>>>
   constexpr not_null(T u)
       : _ptr(std::move(u)) {
     mts_assert(_ptr != nullptr, "Pointer is null.");
@@ -835,4 +847,220 @@ private:
   template <class U>
   friend class weak_managed_ptr;
 };
+
+template <typename T>
+class optional_ptr;
+
+namespace detail {
+template <typename T>
+class optional_deleter {
+  friend class optional_ptr<T>;
+
+public:
+  inline optional_deleter(bool owned = false) noexcept
+      : _owned(owned) {}
+
+  inline optional_deleter(optional_deleter&& od) noexcept
+      : _owned(od._owned) {
+    od._owned = false;
+  }
+
+  inline optional_deleter& operator=(optional_deleter&& od) noexcept {
+    _owned = od._owned;
+    od._owned = false;
+    return *this;
+  }
+
+  optional_deleter(const optional_deleter& od) = delete;
+  optional_deleter& operator=(const optional_deleter& od) = delete;
+
+  inline void operator()(T* obj) const {
+    if (_owned) {
+      delete obj;
+    }
+  }
+
+  MTS_NODISCARD inline bool owned() const noexcept { return _owned; }
+
+private:
+  bool _owned = false;
+};
+} // namespace detail.
+
+/// A unique_ptr that optionally owns the pointer.
+template <typename T>
+class optional_ptr : private std::unique_ptr<T, detail::optional_deleter<T>> {
+public:
+  using base = std::unique_ptr<T, detail::optional_deleter<T>>;
+  using element_type = typename base::element_type;
+  using pointer = typename base::pointer;
+  using deleter_type = typename base::deleter_type;
+
+  using base::get;
+  using base::operator->;
+  using base::operator*;
+
+private:
+  template <class Up>
+  friend class optional_ptr;
+
+  template <typename _Up>
+  using enable_if_convertible_from_opt
+      = std::enable_if_t<std::is_convertible_v<typename optional_ptr<_Up>::pointer, pointer>>;
+
+  template <typename _Up>
+  using enable_if_convertible_from_unique
+      = std::enable_if_t<std::is_convertible_v<typename std::unique_ptr<_Up>::pointer, pointer>>;
+
+public:
+  optional_ptr() noexcept = default;
+
+  optional_ptr(const optional_ptr& ptr) = delete;
+
+  /// Creates an optional_ptr.
+  /// @param owned Should be true if you want the pointer to be owned.
+  inline optional_ptr(T* ptr, bool owned) noexcept
+      : base(ptr, detail::optional_deleter<T>(owned)) {}
+
+  /// Move constructor.
+  /// This releases the input ptr and resets it's owned variable.
+  inline optional_ptr(optional_ptr&& ptr) noexcept
+      : base(ptr.base::release(), ptr.owned()) {
+    ptr.base::get_deleter()._owned = false;
+  }
+
+  /// This releases the input ptr and resets it's owned variable.
+  template <class _Up, class = enable_if_convertible_from_opt<_Up>>
+  inline optional_ptr(optional_ptr<_Up>&& ptr) noexcept
+      : base(ptr.base::release(), ptr.owned()) {
+    ptr.reset();
+  }
+
+  /// Owning constructor.
+  /// This releases the unique_ptr and owns the pointer.
+  inline optional_ptr(std::unique_ptr<T>&& ptr) noexcept
+      : base(ptr.get(), (bool)ptr) {
+    [[maybe_unused]] const pointer p = ptr.release();
+  }
+
+  /// Non-owning constructor.
+  template <class _Up, class = enable_if_convertible_from_unique<_Up>>
+  inline optional_ptr(std::unique_ptr<_Up>&& ptr) noexcept
+      : base(ptr.get(), (bool)ptr) {
+    [[maybe_unused]] const pointer p = (const pointer)ptr.release();
+  }
+
+  /// Non-owning constructor.
+  inline optional_ptr(const std::unique_ptr<T>& ptr) noexcept
+      : base(ptr.get(), detail::optional_deleter<T>(false)) {}
+
+  /// Non-owning constructor.
+  template <class _Up, class = enable_if_convertible_from_unique<_Up>>
+  inline optional_ptr(const std::unique_ptr<_Up>& ptr) noexcept
+      : base(ptr.get(), detail::optional_deleter<T>(false)) {}
+
+  optional_ptr& operator=(const optional_ptr& ptr) = delete;
+
+  inline optional_ptr& operator=(optional_ptr&& ptr) {
+    reset();
+    base::get_deleter()._owned = ptr.owned();
+    base::reset(ptr.release());
+    return *this;
+  }
+
+  template <class _Up, class = enable_if_convertible_from_opt<_Up>>
+  inline optional_ptr& operator=(optional_ptr<_Up>&& ptr) {
+    reset();
+    base::get_deleter()._owned = ptr.owned();
+    base::reset(ptr.release());
+    return *this;
+  }
+
+  /// Returns true if the pointer is owned.
+  MTS_NODISCARD inline explicit operator bool() const noexcept { return get(); }
+
+  /// Releases the pointer.
+  /// @warning Be carefull when calling release because this
+  ///          also resets the owned variable. Make sure to call
+  ///          'owned()' before calling release to know if the
+  ///          pointer was owned.
+  MTS_NODISCARD inline pointer release() noexcept {
+    base::get_deleter()._owned = false;
+    return base::release();
+  }
+
+  /// Deletes the pointer if it was owned and resets the owned variable.
+  inline void reset() {
+    base::reset();
+    base::get_deleter()._owned = false;
+  }
+
+  /// Returns true if the pointer is owned.
+  MTS_NODISCARD inline bool owned() const noexcept { return base::get_deleter().owned(); }
+};
+
+template <typename T>
+inline bool operator==(const optional_ptr<T>& x, const optional_ptr<T>& y) noexcept {
+  return x.get() == y.get();
+}
+
+template <typename T>
+inline bool operator!=(const optional_ptr<T>& x, const optional_ptr<T>& y) noexcept {
+  return x.get() != y.get();
+}
+
+template <typename T>
+inline bool operator==(const optional_ptr<T>& x, std::nullptr_t) noexcept {
+  return x.get() == nullptr;
+}
+
+template <typename T>
+inline bool operator==(std::nullptr_t, const optional_ptr<T>& x) noexcept {
+  return x.get() == nullptr;
+}
+
+template <typename T>
+inline bool operator!=(const optional_ptr<T>& x, std::nullptr_t) noexcept {
+  return x.get() != nullptr;
+}
+
+template <typename T>
+inline bool operator!=(std::nullptr_t, const optional_ptr<T>& x) noexcept {
+  return x.get() != nullptr;
+}
+
+template <typename T>
+inline bool operator==(const optional_ptr<T>& x, const T* y) noexcept {
+  return x.get() == y;
+}
+
+template <typename T>
+inline bool operator==(const T* x, const optional_ptr<T>& y) noexcept {
+  return y.get() == x;
+}
+
+template <typename T>
+inline bool operator!=(const optional_ptr<T>& x, const T* y) noexcept {
+  return x.get() != y;
+}
+
+template <typename T>
+inline bool operator!=(const T* x, const optional_ptr<T>& y) noexcept {
+  return y.get() != x;
+}
+
+template <class T, bool Owned, class... Args>
+inline optional_ptr<T> make_optional_ptr(Args&&... args) {
+  return optional_ptr<T>(new T(std::forward<Args>(args)...), Owned);
+}
+
+template <class T, class... Args>
+inline optional_ptr<T> make_owned_optional_ptr(Args&&... args) {
+  return optional_ptr<T>(new T(std::forward<Args>(args)...), true);
+}
+
+template <template <class> class T, class... Args>
+inline optional_ptr<T<Args...>> make_owned_optional_ptr(Args&&... args) {
+  return optional_ptr<T<Args...>>(new T<Args...>(std::forward<Args>(args)...), true);
+}
 MTS_END_NAMESPACE

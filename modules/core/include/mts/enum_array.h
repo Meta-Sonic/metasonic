@@ -157,22 +157,22 @@ inline constexpr bool operator>=(const enum_array_base<T, Enum>& __x, const enum
 MTS_END_NAMESPACE
 
 namespace std {
-template <auto I, class T, class Enum, typename = _VMTS::enable_if_same_t<decltype(I), Enum>>
+template <auto I, class T, class Enum, _VMTS::enable_if_same_t<decltype(I), Enum> = mts::enabled>
 inline constexpr T& get(_VMTS::enum_array_base<T, Enum>& a) noexcept {
   return a.template at<I>();
 }
 
-template <auto I, class T, class Enum, typename = _VMTS::enable_if_same_t<decltype(I), Enum>>
+template <auto I, class T, class Enum, _VMTS::enable_if_same_t<decltype(I), Enum> = mts::enabled>
 inline constexpr T&& get(_VMTS::enum_array_base<T, Enum>&& a) noexcept {
   return a.template at<I>();
 }
 
-template <auto I, class T, class Enum, typename = _VMTS::enable_if_same_t<decltype(I), Enum>>
+template <auto I, class T, class Enum, _VMTS::enable_if_same_t<decltype(I), Enum> = mts::enabled>
 inline constexpr const T& get(const _VMTS::enum_array_base<T, Enum>& a) noexcept {
   return a.template at<I>();
 }
 
-template <auto I, class T, class Enum, typename = _VMTS::enable_if_same_t<decltype(I), Enum>>
+template <auto I, class T, class Enum, _VMTS::enable_if_same_t<decltype(I), Enum> = mts::enabled>
 inline constexpr const T&& get(const _VMTS::enum_array_base<T, Enum>&& a) noexcept {
   return a.template at<I>();
 }

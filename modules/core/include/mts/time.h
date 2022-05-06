@@ -67,6 +67,15 @@ inline std::string current_date_string() {
   return std::strftime(str, sizeof(str), "%F", std::localtime(&t)) == date_size ? str : "";
 }
 
+/// YYYY-MM-DD
+inline std::wstring current_date_wstring() {
+  constexpr std::size_t date_size = std::char_traits<wchar_t>::length(L"YYYY-MM-DD");
+  wchar_t str[date_size + 1];
+
+  std::time_t t = std::time(nullptr);
+  return std::wcsftime(str, sizeof(str), L"%F", std::localtime(&t)) == date_size ? str : std::wstring();
+}
+
 /// YYYY-MM-DD:HH:MM:SS
 inline std::string current_datetime_string() {
   constexpr std::size_t str_size = std::char_traits<char>::length("YYYY-MM-DD:HH:MM:SS");
@@ -74,6 +83,15 @@ inline std::string current_datetime_string() {
 
   std::time_t t = std::time(nullptr);
   return std::strftime(str, sizeof(str), "%F:%T", std::localtime(&t)) == str_size ? str : "";
+}
+
+/// YYYY-MM-DD:HH:MM:SS
+inline std::wstring current_datetime_wstring() {
+  constexpr std::size_t str_size = std::char_traits<wchar_t>::length(L"YYYY-MM-DD:HH:MM:SS");
+  wchar_t str[str_size + 1];
+
+  std::time_t t = std::time(nullptr);
+  return std::wcsftime(str, sizeof(str), L"%F:%T", std::localtime(&t)) == str_size ? str : std::wstring();
 }
 
 /// YYYY-MM-DD-HH-MM-SS
@@ -85,6 +103,15 @@ inline std::string current_datetime_file_string() {
   return std::strftime(str, sizeof(str), "%F-%H-%M-%S", std::localtime(&t)) == str_size ? str : "";
 }
 
+/// YYYY-MM-DD-HH-MM-SS
+inline std::wstring current_datetime_file_wstring() {
+  constexpr std::size_t str_size = std::char_traits<wchar_t>::length(L"YYYY-MM-DD-HH-MM-SS");
+  wchar_t str[str_size + 1];
+
+  std::time_t t = std::time(nullptr);
+  return std::wcsftime(str, sizeof(str), L"%F-%H-%M-%S", std::localtime(&t)) == str_size ? str : std::wstring();
+}
+
 /// HH:MM:SS
 inline std::string current_time_string() {
   constexpr std::size_t str_size = std::char_traits<char>::length("HH:MM:SS");
@@ -94,8 +121,17 @@ inline std::string current_time_string() {
   return std::strftime(str, sizeof(str), "%T", std::localtime(&t)) == str_size ? str : "";
 }
 
+/// HH:MM:SS
+inline std::wstring current_time_wstring() {
+  constexpr std::size_t str_size = std::char_traits<wchar_t>::length(L"HH:MM:SS");
+  wchar_t str[str_size + 1];
+
+  std::time_t t = std::time(nullptr);
+  return std::wcsftime(str, sizeof(str), L"%T", std::localtime(&t)) == str_size ? str : std::wstring();
+}
+
 /// HH:MM:SS:MMM
-inline std::string current_timems_string() {
+inline std::string current_time_ms_string() {
   // https://stackoverflow.com/a/35157784
   constexpr std::size_t time_size = std::char_traits<char>::length("HH:MM:SS");
   constexpr std::size_t ms_size = std::char_traits<char>::length(":MMM");
@@ -106,7 +142,7 @@ inline std::string current_timems_string() {
   std::time_t t = std::chrono::system_clock::to_time_t(now);
 
   if (std::strftime(str, sizeof(str), "%T", std::localtime(&t)) != time_size) {
-    return "";
+    return std::string();
   }
 
   // Get number of milliseconds for the current second (remainder after division
@@ -116,7 +152,32 @@ inline std::string current_timems_string() {
   // If a call to sprintf or snprintf causes copying to take place between
   // objects that overlap, the behavior is undefined (e.g. sprintf(buf, "%s
   // text", buf);).
-  return std::snprintf(str + time_size, ms_size + 1, ":%03d", (int)ms.count()) == ms_size ? str : "";
+  return std::snprintf(str + time_size, ms_size + 1, ":%03d", (int)ms.count()) == ms_size ? str : std::string();
+}
+
+/// HH:MM:SS:MMM
+inline std::wstring current_time_ms_wstring() {
+  // https://stackoverflow.com/a/35157784
+  constexpr std::size_t time_size = std::char_traits<wchar_t>::length(L"HH:MM:SS");
+  constexpr std::size_t ms_size = std::char_traits<wchar_t>::length(L":MMM");
+  wchar_t str[time_size + ms_size + 1];
+
+  // Current time.
+  std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+  std::time_t t = std::chrono::system_clock::to_time_t(now);
+
+  if (std::wcsftime(str, sizeof(str), L"%T", std::localtime(&t)) != time_size) {
+    return std::wstring();
+  }
+
+  // Get number of milliseconds for the current second (remainder after division
+  // into seconds).
+  std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+
+  // If a call to sprintf or snprintf causes copying to take place between
+  // objects that overlap, the behavior is undefined (e.g. sprintf(buf, "%s
+  // text", buf);).
+  return std::swprintf(str + time_size, ms_size + 1, L":%03d", (int)ms.count()) == ms_size ? str : std::wstring();
 }
 
 /// Current date and time expressed according to ISO 8601.
@@ -135,6 +196,25 @@ inline std::string current_datetime_utc_string() {
              ltm->tm_mday, ltm->tm_hour, ltm->tm_min, ltm->tm_sec)
           == time_size
       ? str
-      : "";
+      : std::string();
+}
+
+/// Current date and time expressed according to ISO 8601.
+/// YYYY-MM-DDTHH:MM:SSZ
+inline std::wstring current_datetime_utc_wstring() {
+  constexpr std::size_t time_size = std::char_traits<wchar_t>::length(L"YYYY-MM-DDTHH:MM:SSZ");
+  wchar_t str[time_size + 1];
+
+  // Current date/time based on current system
+  std::time_t now = std::time(nullptr);
+
+  // Convert now to tm struct for UTC.
+  std::tm* ltm = std::gmtime(&now);
+
+  return std::swprintf(str, time_size + 1, L"%04d-%02d-%02dT%02d:%02d:%02dZ", 1900 + ltm->tm_year, 1 + ltm->tm_mon,
+             ltm->tm_mday, ltm->tm_hour, ltm->tm_min, ltm->tm_sec)
+          == time_size
+      ? str
+      : std::wstring();
 }
 MTS_END_NAMESPACE
