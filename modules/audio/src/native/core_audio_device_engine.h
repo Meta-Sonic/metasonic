@@ -33,11 +33,11 @@
 
 #pragma once
 #include "mts/config.h"
-#include "mts/audio/device.h"
-#include "mts/audio/detail/device_engine.h"
+#include "mts/audio/device_manager.h"
+#include "../device_engine.h"
 
 MTS_BEGIN_NAMESPACE
-class core_audio_engine : public audio_device_manager::engine {
+class core_audio_engine : public audio_engine {
 public:
   core_audio_engine();
 
@@ -48,7 +48,10 @@ public:
 
   virtual std::size_t get_default_output_device(std::error_code& ec) override;
 
-  virtual audio_device_manager::device_info get_audio_device_info(std::size_t index, std::error_code& ec) override;
+  virtual audio_device_info get_audio_device_info(audio_device_index index, std::error_code& ec) override;
+
+  virtual audio_device_info get_audio_device_info(audio_device_id device_id, std::error_code& ec) override;
+
   virtual std::vector<audio_device_manager::device_info> get_audio_device_list(std::error_code& ec) override;
 
   virtual void close_stream() override;

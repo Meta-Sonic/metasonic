@@ -1,5 +1,5 @@
 #include "mts/print.h"
-#include "mts/audio/device.h"
+#include "mts/audio/device_manager.h"
 #include <thread>
 
 mts::audio_device_manager::callback_result saw(void* outputBuffer, void* /*inputBuffer*/, std::size_t nBufferFrames,
@@ -26,7 +26,6 @@ mts::audio_device_manager::callback_result saw(void* outputBuffer, void* /*input
 }
 
 int main(int argc, const char* argv[]) {
-
   std::error_code ec;
 
   mts::audio_device_manager dm;
@@ -41,7 +40,7 @@ int main(int argc, const char* argv[]) {
     return -1;
   }
 
-  mts::print(count);
+  mts::print<mts::equal_string>("device count", count);
 
   std::vector<mts::audio_device_manager::device_info> devices = dm.get_audio_device_list(ec);
   if (ec) {
@@ -51,29 +50,20 @@ int main(int argc, const char* argv[]) {
 
   for (std::size_t i = 0; i < devices.size(); i++) {
     const mts::audio_device_manager::device_info& device = devices[i];
-    mts::print<mts::colon_string>(i, device.name);
-    mts::print<mts::equal_string>("    manufacturer", device.manufacturer);
-    mts::print<mts::equal_string>("    sample_rates", device.sample_rates);
-    mts::print<mts::equal_string>("    current_sample_rate", device.current_sample_rate);
-    mts::print<mts::equal_string>("    preferred_sample_rate", device.preferred_sample_rate);
-    mts::print<mts::equal_string>("    input_channels", device.input_channels);
-    mts::print<mts::equal_string>("    output_channels", device.output_channels);
-    mts::print<mts::equal_string>("    duplex_channels", device.duplex_channels);
-    //        mts::print(device.name, device.manufacturer, device.sample_rates, device.current_sample_rate,
-    //        device.output_channels, device.input_channels);
+    mts::print<mts::empty_string>("device ", i, '\n', device);
   }
 
   mts::print<mts::equal_string>("default_input_device", dm.get_default_input_device(ec));
   mts::print<mts::equal_string>("default_output_device", dm.get_default_output_device(ec));
 
-  std::size_t device = dm.get_default_output_device(ec);
+  std::size_t default_output_device = dm.get_default_output_device(ec);
   if (ec) {
     mts::errprint(ec.message());
     return -1;
   }
 
   mts::audio_device_manager::stream_parameters oParams;
-  oParams.device_id = device;
+  oParams.device_index = default_output_device;
   oParams.channel_count = 2;
   oParams.first_channel = 0;
 

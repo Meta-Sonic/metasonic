@@ -1,55 +1,10 @@
-#include "mts/audio/device.h"
-#include "mts/audio/detail/device_engine.h"
-#include "native/mac/core_audio_device_engine.h"
+#include "device_engine.h"
 #include "mts/assert.h"
 #include "mts/int24_t.h"
+#include "mts/util.h"
 
 MTS_BEGIN_NAMESPACE
-namespace {
-class audio_device_error_category : public std::error_category {
-public:
-  audio_device_error_category() noexcept = default;
-  virtual ~audio_device_error_category() noexcept override = default;
-  virtual const char* name() const noexcept override { return "mts::audio_device"; }
-
-  virtual std::string message(int ev) const override {
-    switch (static_cast<_VMTS::audio_device_error>(ev)) {
-    case audio_device_error::no_device_found:
-      return "no_device_found";
-    case audio_device_error::invalid_device:
-      return "invalid_device";
-    case audio_device_error::device_disconnected:
-      return "device_disconnected";
-    case audio_device_error::memory_error:
-      return "memory_error";
-    case audio_device_error::invalid_parameter:
-      return "invalid_parameter";
-    case audio_device_error::invalid_use:
-      return "invalid_use";
-    case audio_device_error::driver_error:
-      return "driver_error";
-    case audio_device_error::system_error:
-      return "system_error";
-    case audio_device_error::thread_error:
-      return "thread_error";
-    default:
-      mts_error("Unrecognized error");
-      return "Unrecognized error";
-    }
-  }
-};
-inline static const audio_device_error_category s_error_code_category;
-} // namespace.
-
-const std::error_category& audio_device_error_category() noexcept { return s_error_code_category; }
-
-audio_device_manager::engine::engine() {
-
-  clear_stream_info();
-  //    MUTEX_INITIALIZE( &_stream.mutex );
-  //    errorCallback_ = 0;
-  //    showWarnings_ = true;
-}
+audio_device_manager::engine::engine() { clear_stream_info(); }
 
 audio_device_manager::engine::~engine() {}
 
@@ -65,6 +20,30 @@ void audio_device_manager::engine::tickStreamTime() {
   gettimeofday( &stream_.lastTickTimestamp, NULL );
 #endif
   */
+}
+
+std::size_t audio_device_manager::engine::get_stream_sample_rate() const {
+  return is_stream_open() ? _stream.sampleRate : 0;
+}
+
+std::size_t audio_device_manager::engine::get_stream_latency() const {
+  if (!is_stream_open()) {
+    return 0;
+  }
+
+  MTS_BEGIN_DISABLE_ENUM_WARNING
+  switch (_stream.mode) {
+  case OUTPUT:
+    return _stream.latency[OUTPUT];
+  case INPUT:
+    return _stream.latency[INPUT];
+  case DUPLEX:
+    return _stream.latency[OUTPUT] + _stream.latency[INPUT];
+
+  default:
+    return 0;
+  }
+  MTS_END_DISABLE_ENUM_WARNING
 }
 
 void audio_device_manager::engine::setConvertInfo(stream_mode mode, std::size_t firstChannel) {
@@ -144,7 +123,8 @@ void audio_device_manager::engine::setConvertInfo(stream_mode mode, std::size_t 
     }
   }
 }
-void audio_device_manager::engine::convertBuffer(void* outBuffer, void* inBuffer, ConvertInfo& info) {
+
+void audio_device_manager::engine::convertBuffer(void* outBuffer, void* inBuffer, convert_info& info) {
   // This function does format conversion, input/output channel compensation, and
   // data interleaving/deinterleaving.  24-bit integers are assumed to occupy
   // the lower three bytes of a 32-bit integer.
@@ -638,7 +618,7 @@ void audio_device_manager::engine::clear_stream_info() {
   _stream.streamTime = 0.0;
   _stream.apiHandle = 0;
   _stream.deviceBuffer = 0;
-  _stream.callbackInfo.cb = nullptr;
+  _stream.callbackInfo.callback = nullptr;
   _stream.callbackInfo.userData = 0;
   _stream.callbackInfo.isRunning = false;
   _stream.callbackInfo.deviceDisconnected = false;
@@ -689,9 +669,9 @@ std::size_t audio_device_manager::engine::format_bytes(audio_device_format forma
   }
 }
 
-mts::error_result audio_device_manager::engine::open_stream(stream_parameters* output_params,
-    stream_parameters* input_params, device_format format, std::size_t sample_rate, std::size_t& buffer_size,
-    callback cb, void* user_data) {
+mts::error_result audio_device_manager::engine::open_stream(const stream_parameters* output_params,
+    const stream_parameters* input_params, device_format format, std::size_t sample_rate, std::size_t& buffer_size,
+    audio_device_callback callback, void* user_data) {
 
   if (_stream.state != stream_state::STREAM_CLOSED) {
     return mts::make_error_code(mts::audio_device_error::invalid_use);
@@ -732,7 +712,7 @@ mts::error_result audio_device_manager::engine::open_stream(stream_parameters* o
   unsigned int oChannels = 0;
   if (output_params) {
     oChannels = output_params->channel_count;
-    if (output_params->device_id >= nDevices) {
+    if (output_params->device_index >= nDevices) {
       //          errorText_ = "RtApi::openStream: output device parameter value is invalid.";
       return mts::make_error_code(mts::audio_device_error::invalid_use);
     }
@@ -741,7 +721,7 @@ mts::error_result audio_device_manager::engine::open_stream(stream_parameters* o
   unsigned int iChannels = 0;
   if (input_params) {
     iChannels = input_params->channel_count;
-    if (input_params->device_id >= nDevices) {
+    if (input_params->device_index >= nDevices) {
       //          errorText_ = "RtApi::openStream: input device parameter value is invalid.";
       return mts::make_error_code(mts::audio_device_error::invalid_use);
     }
@@ -749,7 +729,7 @@ mts::error_result audio_device_manager::engine::open_stream(stream_parameters* o
 
   if (oChannels > 0) {
 
-    if (mts::error_result er = probe_device_open(output_params->device_id, OUTPUT, oChannels,
+    if (mts::error_result er = probe_device_open(output_params->device_index, OUTPUT, oChannels,
             output_params->first_channel, sample_rate, format, buffer_size)) {
       return er;
     }
@@ -757,13 +737,13 @@ mts::error_result audio_device_manager::engine::open_stream(stream_parameters* o
 
   if (iChannels > 0) {
 
-    if (mts::error_result er = probe_device_open(
-            input_params->device_id, INPUT, iChannels, input_params->first_channel, sample_rate, format, buffer_size)) {
+    if (mts::error_result er = probe_device_open(input_params->device_index, INPUT, iChannels,
+            input_params->first_channel, sample_rate, format, buffer_size)) {
       return er;
     }
   }
 
-  _stream.callbackInfo.cb = cb;
+  _stream.callbackInfo.callback = callback;
   _stream.callbackInfo.userData = user_data;
 
   //      if ( options ) options->numberOfBuffers = stream_.nBuffers;
@@ -772,60 +752,4 @@ mts::error_result audio_device_manager::engine::open_stream(stream_parameters* o
   return std::error_code();
 }
 
-audio_device_manager::audio_device_manager() { _engine = std::make_unique<core_audio_engine>(); }
-
-audio_device_manager::~audio_device_manager() {}
-
-std::error_code audio_device_manager::init() { return _engine->init(); }
-
-std::size_t audio_device_manager::get_audio_device_count(std::error_code& ec) {
-  return _engine->get_audio_device_count(ec);
-}
-
-std::size_t audio_device_manager::get_default_input_device(std::error_code& ec) {
-  return _engine->get_default_input_device(ec);
-}
-
-std::size_t audio_device_manager::get_default_output_device(std::error_code& ec) {
-  return _engine->get_default_output_device(ec);
-}
-
-audio_device_manager::device_info audio_device_manager::get_audio_device_info(std::size_t index, std::error_code& ec) {
-  return _engine->get_audio_device_info(index, ec);
-}
-
-std::vector<audio_device_manager::device_info> audio_device_manager::get_audio_device_list(std::error_code& ec) {
-  return _engine->get_audio_device_list(ec);
-}
-
-mts::error_result audio_device_manager::open_stream(stream_parameters* output_params, stream_parameters* input_params,
-    device_format format, std::size_t sample_rate, std::size_t& buffer_size, callback cb, void* user_data) {
-
-  return _engine->open_stream(output_params, input_params, format, sample_rate, buffer_size, cb, user_data);
-}
-
-void audio_device_manager::close_stream() { return _engine->close_stream(); }
-std::error_code audio_device_manager::start_stream() { return _engine->start_stream(); }
-std::error_code audio_device_manager::stop_stream() { return _engine->stop_stream(); }
-std::error_code audio_device_manager::abort_stream() { return _engine->abort_stream(); }
-bool audio_device_manager::is_stream_open() const { return _engine->is_stream_open(); }
-bool audio_device_manager::is_stream_running() const { return _engine->is_stream_running(); }
-double audio_device_manager::get_stream_time() { return _engine->get_stream_time(); }
-
-// inline RtAudio::Api RtAudio :: getCurrentApi( void ) { return rtapi_->getCurrentApi(); }
-// inline unsigned int RtAudio :: getDeviceCount( void ) { return rtapi_->getDeviceCount(); }
-// inline RtAudio::DeviceInfo RtAudio :: getDeviceInfo( unsigned int device ) { return rtapi_->getDeviceInfo( device );
-// } inline unsigned int RtAudio :: getDefaultInputDevice( void ) { return rtapi_->getDefaultInputDevice(); } inline
-// unsigned int RtAudio :: getDefaultOutputDevice( void ) { return rtapi_->getDefaultOutputDevice(); } inline void
-// RtAudio :: closeStream( void ) { return rtapi_->closeStream(); } inline RtAudioErrorType RtAudio :: startStream( void
-// ) { return rtapi_->startStream(); } inline RtAudioErrorType RtAudio :: stopStream( void )  { return
-// rtapi_->stopStream(); } inline RtAudioErrorType RtAudio :: abortStream( void ) { return rtapi_->abortStream(); }
-// inline bool RtAudio :: isStreamOpen( void ) const { return rtapi_->isStreamOpen(); }
-// inline bool RtAudio :: isStreamRunning( void ) const { return rtapi_->isStreamRunning(); }
-// inline long RtAudio :: getStreamLatency( void ) { return rtapi_->getStreamLatency(); }
-// inline unsigned int RtAudio :: getStreamSampleRate( void ) { return rtapi_->getStreamSampleRate(); }
-// inline double RtAudio :: getStreamTime( void ) { return rtapi_->getStreamTime(); }
-// inline void RtAudio :: setStreamTime( double time ) { return rtapi_->setStreamTime( time ); }
-// inline void RtAudio :: setErrorCallback( RtAudioErrorCallback errorCallback ) { rtapi_->setErrorCallback(
-// errorCallback ); } inline void RtAudio :: showWarnings( bool value ) { rtapi_->showWarnings( value ); }
 MTS_END_NAMESPACE

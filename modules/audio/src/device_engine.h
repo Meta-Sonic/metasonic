@@ -33,7 +33,7 @@
 
 #pragma once
 #include "mts/config.h"
-#include "mts/audio/device.h"
+#include "mts/audio/device_manager.h"
 
 #include <mutex>
 #include <thread>
@@ -49,11 +49,15 @@ public:
   virtual std::size_t get_default_input_device(std::error_code& ec) = 0;
   virtual std::size_t get_default_output_device(std::error_code& ec) = 0;
 
-  virtual device_info get_audio_device_info(std::size_t index, std::error_code& ec) = 0;
+  virtual device_info get_audio_device_info(audio_device_index index, std::error_code& ec) = 0;
+
+  virtual device_info get_audio_device_info(audio_device_id device_id, std::error_code& ec) = 0;
+
   virtual std::vector<device_info> get_audio_device_list(std::error_code& ec) = 0;
 
-  mts::error_result open_stream(stream_parameters* output_params, stream_parameters* input_params, device_format format,
-      std::size_t sample_rate, std::size_t& buffer_size, callback cb, void* user_data = nullptr);
+  mts::error_result open_stream(const stream_parameters* output_params, const stream_parameters* input_params,
+      device_format format, std::size_t sample_rate, std::size_t& buffer_size, audio_device_callback cb,
+      void* user_data = nullptr);
 
   virtual void close_stream() = 0;
   virtual std::error_code start_stream() = 0;
@@ -65,6 +69,10 @@ public:
   //    virtual double getStreamTime( void ) const { return stream_.streamTime; }
   //    virtual void setStreamTime( double time );
 
+  std::size_t get_stream_sample_rate() const;
+
+  std::size_t get_stream_latency() const;
+
   virtual double get_stream_time() const { return _stream.streamTime; }
 
   inline bool is_stream_open() const noexcept { return _stream.state != stream_state::STREAM_CLOSED; }
@@ -75,11 +83,10 @@ public:
 
 protected:
   enum class stream_state { STREAM_STOPPED, STREAM_STOPPING, STREAM_RUNNING, STREAM_CLOSED = -50 };
-
   enum stream_mode { OUTPUT, INPUT, DUPLEX, UNINITIALIZED = -75 };
 
   // A protected structure used for buffer conversion.
-  struct ConvertInfo {
+  struct convert_info {
     int channels;
     int inJump, outJump;
     device_format inFormat, outFormat;
@@ -90,16 +97,16 @@ protected:
   // This global structure type is used to pass callback information
   // between the private RtAudio stream structure and global callback
   // handling functions.
-  struct CallbackInfo {
-    void* object{}; // Used as a "this" pointer.
-    std::thread::native_handle_type thread{};
-    callback cb = nullptr;
-    void* userData{};
-    void* apiInfo{}; // void pointer for API specific callback information
-    bool isRunning{ false };
-    bool doRealtime{ false };
+  struct callback_info {
+    void* object = nullptr; // Used as a "this" pointer.
+    //    std::thread::native_handle_type thread{};
+    audio_device_callback callback = nullptr;
+    void* userData = nullptr;
+    void* apiInfo = nullptr; // void pointer for API specific callback information
+    bool isRunning = false;
+    bool doRealtime = false;
     int priority{};
-    bool deviceDisconnected{ false };
+    bool deviceDisconnected = false;
   };
 
   // A protected structure for audio streams.
@@ -124,8 +131,8 @@ protected:
     device_format userFormat;
     device_format deviceFormat[2]; // Playback and record, respectively.
     std::mutex mutex;
-    CallbackInfo callbackInfo;
-    ConvertInfo convertInfo[2];
+    callback_info callbackInfo;
+    convert_info convertInfo[2];
     double streamTime; // Number of elapsed seconds since the stream started.
 
 #if defined(HAVE_GETTIMEOFDAY)
@@ -153,7 +160,7 @@ protected:
     Protected method used to perform format, channel number, and/or interleaving
     conversions between the user and device buffers.
   */
-  void convertBuffer(void* outBuffer, void* inBuffer, ConvertInfo& info);
+  void convertBuffer(void* outBuffer, void* inBuffer, convert_info& info);
 
   //! Protected common method used to perform byte-swapping on buffers.
   void byteSwapBuffer(void* buffer, std::size_t samples, audio_device_format format);
@@ -170,4 +177,7 @@ protected:
       = 0;
 };
 
+class audio_engine : public audio_device_manager::engine {
+public:
+};
 MTS_END_NAMESPACE
