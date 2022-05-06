@@ -9,7 +9,6 @@ public:
   asset_holder()
       : _assets(mts::assets::retain_with_initializer(&assets_initializer)) {}
 
-   
 private:
   std::shared_ptr<mts::asset_manager> _assets;
 
@@ -33,28 +32,27 @@ private:
       { "roboto-medium-14", 14.0f }
     });
     // clang-format on
-//
+    //
     auto s = std::make_shared<mts::style>();
-      s->set<mts::style::button::background_color>(0x297DFFFF);
-      s->set<mts::style::button::hover_background_color>(mts::color(0x297DFFFF).brighter(0.2f));
-      s->set<mts::style::button::pressed_background_color>(mts::color(0x297DFFFF).darker(0.2f));
-      s->set<mts::style::button::text_color>(0xFFFFFFFF);
-      s->set<mts::style::button::hover_text_color>(0xFFFFFFFF);
-      s->set<mts::style::button::pressed_text_color>(0xFFFFFFFF);
-      s->set<mts::style::button::border_color>(0);
-      s->set<mts::style::button::font_name>("roboto-regular-12");
-          assets->styles.add("button", s);
-      
-      
-//    s->button.background_color = 0x297DFFFF;
-//    s->button.hover_background_color = s->button.background_color.brighter(0.2f);
-//    s->button.pressed_background_color = s->button.background_color.darker(0.2f);
-//    s->button.text_color = 0xFFFFFFFF;
-//    s->button.hover_text_color = 0xFFFFFFFF;
-//    s->button.pressed_text_color = 0xFFFFFFFF;
-//    s->button.border_color = 0;
-//    s->button.font_name = "roboto-regular-12";
-//    assets->styles.add("button", s);
+    s->set<mts::style::button::background_color>(0x297DFFFF);
+    s->set<mts::style::button::hover_background_color>(mts::color(0x297DFFFF).brighter(0.2f));
+    s->set<mts::style::button::pressed_background_color>(mts::color(0x297DFFFF).darker(0.2f));
+    s->set<mts::style::button::text_color>(0xFFFFFFFF);
+    s->set<mts::style::button::hover_text_color>(0xFFFFFFFF);
+    s->set<mts::style::button::pressed_text_color>(0xFFFFFFFF);
+    s->set<mts::style::button::border_color>(0);
+    s->set<mts::style::button::font_name>("roboto-regular-12");
+    assets->styles.add("button", s);
+
+    //    s->button.background_color = 0x297DFFFF;
+    //    s->button.hover_background_color = s->button.background_color.brighter(0.2f);
+    //    s->button.pressed_background_color = s->button.background_color.darker(0.2f);
+    //    s->button.text_color = 0xFFFFFFFF;
+    //    s->button.hover_text_color = 0xFFFFFFFF;
+    //    s->button.pressed_text_color = 0xFFFFFFFF;
+    //    s->button.border_color = 0;
+    //    s->button.font_name = "roboto-regular-12";
+    //    assets->styles.add("button", s);
   }
 };
 
@@ -74,9 +72,9 @@ public:
     //    mts::print("ff", ff.get_string_width("Bingo"));
 
     // juce::Component size = 216.
-//    mts::print("sizeof(view)", sizeof(mts::view));
-//    mts::print("sizeof(object)", sizeof(mts::object));
-//    mts::print("sizeof(mts::weak_managed_ptr<mts::view>)", sizeof(mts::weak_managed_ptr<mts::view>));
+    //    mts::print("sizeof(view)", sizeof(mts::view));
+    //    mts::print("sizeof(object)", sizeof(mts::object));
+    //    mts::print("sizeof(mts::weak_managed_ptr<mts::view>)", sizeof(mts::weak_managed_ptr<mts::view>));
 
     _window.set_size({ 700, 500 });
     _window.add_to_desktop_centered();

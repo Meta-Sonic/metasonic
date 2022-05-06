@@ -1,6 +1,6 @@
 //#include "settings_view.h"
 //
-//settings_view::settings_view() {
+// settings_view::settings_view() {
 //  _font = _VDNFT::get_assets()->fonts.get("roboto-medium-12");
 //
 //  _label.set_text("Button :");
@@ -36,9 +36,9 @@
 //  set_size({ 200, 130 });
 //}
 //
-//settings_view::~settings_view() { mts::print("settings_view::~settings_view"); }
+// settings_view::~settings_view() { mts::print("settings_view::~settings_view"); }
 //
-//void settings_view::mouse_left_down(const mts::mouse_event& evt) {
+// void settings_view::mouse_left_down(const mts::mouse_event& evt) {
 //  if (mts::frect(0, 0, get_width(), 20).intersect(evt.get_position())) {
 //    _is_selected = true;
 //    _click_pos = evt.get_absolute_position();
@@ -50,7 +50,7 @@
 //  }
 //  //
 //}
-//void settings_view::mouse_left_drag(const mts::mouse_event& evt) {
+// void settings_view::mouse_left_drag(const mts::mouse_event& evt) {
 //  if (!_is_selected) {
 //    return;
 //  }
@@ -64,7 +64,7 @@
 //
 //  set_position(new_pos);
 //}
-//void settings_view::mouse_left_up(const mts::mouse_event& evt) {
+// void settings_view::mouse_left_up(const mts::mouse_event& evt) {
 //  _VDNFT::unused(evt);
 //  if (mts::assign(_is_selected, false)) {
 //    //    set_cursor(mts::cursor_type::normal);
@@ -72,7 +72,7 @@
 //  }
 //}
 //
-//void settings_view::bounds_changed(const mts::view::bounds_status& bs) {
+// void settings_view::bounds_changed(const mts::view::bounds_status& bs) {
 //  _VDNFT::unused(bs);
 //  _bg_path = mts::path();
 //  _bg_path.add_rounded_rect(get_local_fbounds(), 5.0f);
@@ -83,7 +83,7 @@
 //  //  _header_path.add_rounded_rect(get_local_fbounds().with_height(20), 5.0f);
 //}
 //
-//void settings_view::paint(mts::graphics::context& gc, const mts::frect& dirty_rect) {
+// void settings_view::paint(mts::graphics::context& gc, const mts::frect& dirty_rect) {
 //  _VDNFT::unused(dirty_rect);
 //  //  mts::print("DDDDRIRRIIR", dirty_rect);
 //

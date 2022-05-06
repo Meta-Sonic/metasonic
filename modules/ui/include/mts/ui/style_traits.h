@@ -36,6 +36,7 @@
 #include "mts/graphics/color.h"
 #include "mts/graphics/rect.h"
 #include "mts/traits.h"
+#include "mts/string_literal.h"
 #include <string_view>
 
 MTS_BEGIN_NAMESPACE
@@ -46,14 +47,14 @@ struct is_style_enum : public std::false_type {};
 template <class T>
 inline constexpr bool is_style_enum_v = is_style_enum<T>::value;
 
-template <auto _EnumValue, typename T, string_litteral Name>
+template <auto _EnumValue, typename T, string_literal Name>
 struct enum_pair {
   using value_type = T;
   static constexpr auto value = _EnumValue;
-  static constexpr string_litteral name = Name;
+  static constexpr string_literal name = Name;
 };
 
-template <auto _EnumValue, typename T, string_litteral Name>
+template <auto _EnumValue, typename T, string_literal Name>
 using declare_attribute = enum_pair<_EnumValue, T, Name>;
 
 namespace detail {
@@ -82,7 +83,7 @@ struct enum_obj {
   static constexpr auto value = _EnumValue;
 };
 
-template <string_litteral Name>
+template <string_literal Name>
 struct name_obj {
   static constexpr auto value = Name;
 };
@@ -147,7 +148,7 @@ struct style_object_descriptor {
     std::get<get_index<_EnumValue>()>(objs).template set<_EnumValue>(v);
   }
 
-  template <typename _EnumType, string_litteral Name, typename T>
+  template <typename _EnumType, string_literal Name, typename T>
   void set(const T& v) {
     std::get<tuple_index_v<_EnumType, indexes>>(objs).template set<Name>(v);
   }
@@ -157,7 +158,7 @@ struct style_object_descriptor {
     return std::get<get_index<_EnumValue>()>(objs).template get<_EnumValue>();
   }
 
-  template <typename _EnumType, string_litteral Name>
+  template <typename _EnumType, string_literal Name>
   const auto& get() const {
     return std::get<(size_t)tuple_index_v<_EnumType, indexes>>(objs).template get<Name>();
   }
@@ -178,7 +179,7 @@ struct style_object_descriptor {
 
 struct style_descriptor_base {};
 
-template <string_litteral _GroupName, typename... Atts>
+template <string_literal _GroupName, typename... Atts>
 class style_descriptor : public style_descriptor_base {
 public:
   using meta = detail::style_meta<Atts...>;
@@ -186,7 +187,7 @@ public:
   using values = typename meta::values;
   using indexes = typename meta::indexes;
   using names = typename meta::names;
-  static constexpr string_litteral group = _GroupName;
+  static constexpr string_literal group = _GroupName;
 
   // private:
   template <auto _EnumValue>
@@ -194,7 +195,7 @@ public:
     return (size_t)tuple_index_v<detail::enum_obj<_EnumValue>, indexes>;
   }
 
-  template <string_litteral Name>
+  template <string_literal Name>
   static inline constexpr size_t get_name_index() {
     return (size_t)tuple_index_v<detail::name_obj<Name>, names>;
   }
@@ -218,7 +219,7 @@ public:
     iterate_impl<0>(std::move(fct));
   }
 
-  template <string_litteral Name>
+  template <string_literal Name>
   static constexpr bool has() {
     return detail::tuple_index_inf_v<detail::name_obj<Name>, names> < meta::count;
   }
@@ -230,7 +231,7 @@ public:
     return std::string_view(std::tuple_element_t<get_index<_EnumValue>(), names>::value.value);
   }
 
-  template <string_litteral Name>
+  template <string_literal Name>
   static constexpr decltype(std::tuple_element_t<get_name_index<Name>(), indexes>::value) get_uid() {
     return std::tuple_element_t<get_name_index<Name>(), indexes>::value;
   }
@@ -240,7 +241,7 @@ public:
     std::get<get_index<_EnumValue>()>(attributes) = v;
   }
 
-  template <string_litteral Name, typename T>
+  template <string_literal Name, typename T>
   void set(const T& v) {
     std::get<get_name_index<Name>()>(attributes) = v;
   }
@@ -250,7 +251,7 @@ public:
     return std::get<get_index<_EnumValue>()>(attributes);
   }
 
-  template <string_litteral Name>
+  template <string_literal Name>
   const auto& get() const {
     return std::get<get_name_index<Name>()>(attributes);
   }

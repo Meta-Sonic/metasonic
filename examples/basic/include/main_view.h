@@ -17,17 +17,18 @@ protected:
   //  virtual void paint(mts::graphics::context& gc) override;
   virtual void paint(mts::context& gc, const mts::rect<float>& dirty_rect) override;
 
-//  virtual void observe_value_for_key_path(
-//      const mts::object* sender, const std::string& key_path, mts::property msg) override;
+  //  virtual void observe_value_for_key_path(
+  //      const mts::object* sender, const std::string& key_path, mts::property msg) override;
 
   virtual void view_being_deleted(mts::view& v) override;
 
-    virtual void property_changed(const std::string& name) override;
+  virtual void property_changed(const std::string& name) override;
+
 private:
-    mts::button _button_1;
-    mts::styled_view _view_1;
-    mts::view _view_2;
-    mts::popup_menu _menu;
-    mts::combo_box _box;
-    mts::image _img;
+  mts::button _button_1;
+  mts::styled_view _view_1;
+  mts::view _view_2;
+  mts::popup_menu _menu;
+  mts::combo_box _box;
+  mts::image _img;
 };
